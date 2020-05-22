@@ -7,3 +7,4 @@ nltk==3.5
 wheel==0.34.2
 bert-for-tf2==0.14.4
 sentencepiece==0.1.91
+textstat==0.6.2

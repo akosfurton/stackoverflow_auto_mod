@@ -1,7 +1,13 @@
-import pandas as pd
-from okcupid_stackoverflow.utils.contractions import CONTRACTION_MAP
-from nltk.corpus import stopwords
 import re
+import string
+import unicodedata
+
+import pandas as pd
+from nltk.corpus import stopwords
+from pandas.core.common import flatten
+from textstat import textstat
+
+from okcupid_stackoverflow.utils.contractions import CONTRACTION_MAP
 
 
 def load_raw_data(data_path):
@@ -17,11 +23,11 @@ def load_stopwords(language="english"):
 
 
 def strip_html_tags(text):
-    TAG_REGEX = re.compile(r'<[^>]+>')
-    return TAG_REGEX.sub('', text)
+    tag_regex = re.compile(r"<[^>]+>")
+    return tag_regex.sub("", text)
 
 
-def remove_accented_chars(text):
+def convert_accented_characters(text):
     text = (
         unicodedata.normalize("NFKD", text)
         .encode("ascii", "ignore")
@@ -53,10 +59,11 @@ def expand_contractions(text, contraction_mapping):
 
 
 def remove_special_characters(text, remove_digits):
+    # Remove punctuation, optionally remove digits
     if remove_digits:
-        text = re.sub("(\\d|\\W)+", "", text)
+        text = re.sub(r"(\d|\W)+", "", text)
     else:
-        text = re.sub("[^a-zA-z0-9\s]", "", text)
+        text = re.sub(r"[^a-zA-z0-9\s]", "", text)
     return text
 
 
@@ -68,56 +75,89 @@ def lemmatize_text(text):
     return text
 
 
-def simple_stemmer(text):
-    ps = nltk.porter.PorterStemmer()
-    text = " ".join([ps.stem(word) for word in text.split()])
-    return text
-
-
-def remove_stopwords(text, is_lower_case=False):
+def remove_stopwords(text):
     tokens = tokenizer.tokenize(text)
     tokens = [token.strip() for token in tokens]
-    if is_lower_case:
-        filtered_tokens = [token for token in tokens if token not in stopword_list]
-    else:
-        filtered_tokens = [
-            token for token in tokens if token.lower() not in stopword_list
-        ]
+    filtered_tokens = [token for token in tokens if token not in load_stopwords()]
     filtered_text = " ".join(filtered_tokens)
     return filtered_text
 
+
 def remove_multiple_spaces(text):
-    text = re.sub(r'\s+', ' ', text)
+    # TODO: Also remove new lines
+    text = re.sub(r"\s+", " ", text)
 
     return text
 
-def normalize_text(doc):
+
+def calc_num_sentences(text):
+    return textstat.sentence_count(text)
+
+
+def calc_num_words(text):
+    return len(text.split())
+
+
+def calc_num_chars(text):
+    return textstat.char_count(text, ignore_spaces=True)
+
+
+def calc_num_code_blocks(text):
+    return text.count("<code>")
+
+
+def calc_num_punctuation_chars(text):
+    return len([x for x in text if x in set(string.punctuation)])
+
+
+def calc_num_words_in_code_blocks(text):
+    code_text = list(flatten(re.findall(r"<code>(.*?)</code>", text)))
+
+    n_words = 0
+    for snippet in code_text:
+        n_words += len(snippet.split())
+
+    return n_words
+
+
+def normalize_text(doc, deep_clean=False, remove_digits=False):
     # FOR BERT, Don't need to remove punctuation, don't need to remove stop-words
     doc = doc.lower()
 
     doc = strip_html_tags(doc)
-    doc = remove_accented_chars(doc)
+    doc = convert_accented_characters(doc)
     doc = expand_contractions(doc, CONTRACTION_MAP)
-    doc = re.sub(r"[\r|\n|\r\n]+", " ", doc)
-    doc = lemmatize_text(doc)
-    special_char_pattern = re.compile(r"([{.(-)!}])")
-    doc = special_char_pattern.sub(" \\1 ", doc)
-    doc = remove_special_characters(doc, remove_digits=remove_digits)
-
     doc = remove_multiple_spaces(doc)
 
-    doc = remove_stopwords(doc, is_lower_case=text_lower_case)
+    if deep_clean:
+        doc = remove_special_characters(doc, remove_digits=remove_digits)
+        doc = lemmatize_text(doc)
+        doc = remove_stopwords(doc)
 
     return doc
 
 
 def run_preprocessing():
+    df = load_raw_data("data/raw/interview_dataset.csv")
+
+    df["light_cleaned_title"] = df["title"].apply(normalize_text)
+    df["light_cleaned_body"] = df["body"].apply(normalize_text)
+
     # Calculate pre-normalized features
+    df["num_sentences_body"] = df["body"].apply(calc_num_sentences)
+    df["num_words_title"] = df["title"].apply(calc_num_words)
+    df["num_words_body"] = df["body"].apply(calc_num_words)
+    df["num_chars_title"] = df["title"].apply(calc_num_chars)
+    df["num_chars_body"] = df["body"].apply(calc_num_chars)
+    df["num_code_blocks"] = df["body"].apply(calc_num_code_blocks)
+    df["num_words_code_blocks"] = df["body"].apply(calc_num_words_in_code_blocks)
+    df["num_punctuation"] = df["body"].apply(calc_num_punctuation_chars)
 
     # Normalize Text
-    df['cleaned_title'] = df['title'].apply(normalize_text)
-    df['cleaned_body'] = df['body'].apply(normalize_text)
+    df["cleaned_title"] = df["title"].apply(normalize_text, deep_clean=True)
+    df["cleaned_body"] = df["body"].apply(normalize_text, deep_clean=True)
 
     # Calculate TF_IDF features
 
-    return
+    df.to_parquet("data/processed/cleaned.parquet")
+
