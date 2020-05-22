@@ -1,0 +1,7 @@
+# For duplicates
+# Latent Dirichelet Allocation (for the topic), TF-IDF and cosine similarity
+
+# For spam, would likely perform better than random, but spam is different than off-topic
+# Off-topic / duplicates are mostly an issue of carelessness, inexperience
+# Spam is often more malicious and adversarial (may be good for a rules based approach to catch spam as well)
+# At least the common categories of it
