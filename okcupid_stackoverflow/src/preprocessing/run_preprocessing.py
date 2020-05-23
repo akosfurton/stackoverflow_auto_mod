@@ -170,6 +170,8 @@ def run_preprocessing():
         df["body"].swifter.allow_dask_on_strings().apply(normalize_text)
     )
 
+    df["light_cleaned_text"] = df["light_cleaned_title"] + " " + df["light_cleaned_body"]
+
     # Calculate pre-normalized features
     df["num_sentences_body"] = df["body"].apply(calc_num_sentences)
     df["num_words_title"] = df["title"].apply(calc_num_words)
@@ -190,6 +192,8 @@ def run_preprocessing():
         .swifter.allow_dask_on_strings()
         .apply(normalize_text, deep_clean=True, nlp=nlp)
     )
+
+    df["cleaned_text"] = df["cleaned_title"] + " " + df["cleaned_body"]
 
     # Calculate TF_IDF features
 
