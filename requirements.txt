@@ -4,7 +4,9 @@ scipy==1.4.1
 scikit-learn==0.23.1
 matplotlib==3.2.1
 nltk==3.5
-wheel==0.34.2
-bert-for-tf2==0.14.4
-sentencepiece==0.1.91
 textstat==0.6.2
+contractions==0.0.24
+setuptools==41.2.0
+spacy==2.2.4
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.0/en_core_web_sm-2.2.0.tar.gz
+swifter==0.304
