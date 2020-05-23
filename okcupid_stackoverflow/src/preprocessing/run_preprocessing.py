@@ -5,6 +5,7 @@ import unicodedata
 import contractions
 import en_core_web_sm
 import pandas as pd
+import numpy as np
 from nltk.corpus import stopwords
 from pandas.core.common import flatten
 from textstat import textstat
@@ -130,6 +131,27 @@ def calc_num_words_in_code_blocks(text):
     return n_words
 
 
+def calc_word_len_mean(text):
+    words = text.split()
+    word_lengths = np.array([len(x) for x in words])
+
+    return np.mean(word_lengths)
+
+
+def calc_word_len_median(text):
+    words = text.split()
+    word_lengths = np.array([len(x) for x in words])
+
+    return np.median(word_lengths)
+
+
+def calc_word_len_max(text):
+    words = text.split()
+    word_lengths = np.array([len(x) for x in words])
+
+    return np.max(word_lengths)
+
+
 def normalize_text(doc, deep_clean=False, nlp=None):
     # FOR BERT, Don't need to remove punctuation, don't need to remove stop-words
     if not deep_clean:
@@ -170,15 +192,20 @@ def run_preprocessing():
         df["body"].swifter.allow_dask_on_strings().apply(normalize_text)
     )
 
-    df["light_cleaned_text"] = df["light_cleaned_title"] + " " + df["light_cleaned_body"]
+    df["light_cleaned_text"] = (
+        df["light_cleaned_title"] + " " + df["light_cleaned_body"]
+    )
 
-    # Calculate pre-normalized features
-    df["num_sentences_body"] = df["body"].apply(calc_num_sentences)
-    df["num_words_title"] = df["title"].apply(calc_num_words)
-    df["num_words_body"] = df["body"].apply(calc_num_words)
-    df["num_chars_title"] = df["title"].apply(calc_num_chars)
-    df["num_chars_body"] = df["body"].apply(calc_num_chars)
-    df["num_punctuation"] = df["body"].apply(calc_num_punctuation_chars)
+    # Calculate meta-data features
+    df["num_sentences_body"] = df["light_cleaned_body"].apply(calc_num_sentences)
+    df["num_words_title"] = df["light_cleaned_title"].apply(calc_num_words)
+    df["num_words_body"] = df["light_cleaned_body"].apply(calc_num_words)
+    df["num_chars_title"] = df["light_cleaned_title"].apply(calc_num_chars)
+    df["num_chars_body"] = df["light_cleaned_body"].apply(calc_num_chars)
+    df["num_punctuation"] = df["light_cleaned_body"].apply(calc_num_punctuation_chars)
+    df["word_len_mean"] = df["light_cleaned_body"].apply(calc_word_len_mean)
+    df["word_len_median"] = df["light_cleaned_body"].apply(calc_word_len_median)
+    df["word_len_max"] = df["light_cleaned_body"].apply(calc_word_len_max)
 
     nlp = en_core_web_sm.load()
     # Normalize Text
@@ -194,7 +221,7 @@ def run_preprocessing():
     )
 
     df["cleaned_text"] = df["cleaned_title"] + " " + df["cleaned_body"]
+    df["num_words_body_cleaned"] = df["cleaned_body"].apply(calc_num_words)
+    df["pct_words_meaning"] = df["num_words_body_cleaned"] / df["num_words_body"]
 
-    # Calculate TF_IDF features
-
-    # df.to_parquet("data/processed/cleaned.parquet")
+    df.to_parquet("../data/processed/cleaned.parquet")
