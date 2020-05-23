@@ -1,146 +1,239 @@
-# Runs BERT model
-# (Bidirectional) -> looks at both left AND right context of token
-# ()
-
-
-# Why not Word2Vec -> does not take into account different meanings in different context
-# (May be worth training)
-
-# ELMo / ULMFiT -> introductory transfer learning (Pre-Trained model + Fine - Tune the last layer)
-
-# Transformers like BERT are much faster to train than LSTM type models such as ELMo
-
-# 3 Embeddings
-# Position embeddings (position of word in a sentence)
-# Segment embeddings (one sentence to the next)
-# Token embeddings
-
-# Dropout (randomly mast ~15-20% of words)
-# Sometimes replace with [MASK] token, sometimes replace with random word to prevent overfitting
-
+import numpy as np
+import pandas as pd
+from keras_preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
-import tensorflow as tf
-import tensorflow_hub as hub
-from tensorflow.keras import layers
-import bert
+from torch import nn, cat, no_grad, cuda, float as tf_float, tensor
+from torch.utils.data import DataLoader, TensorDataset
+from torch.optim import Adam
+from tqdm import tqdm
+from transformers import BertModel, BertTokenizer
+
+MAX_SEQ_LENGTH = 300
+HIDDEN_DIM = 512
+MLP_DIM = 1024  # 2 layers
+NUM_TRAIN_EPOCHS = 3
+BATCH_SIZE = 16
+LEARNING_RATE = 2e-5
+NOT_METADATA_COLS = [
+    "body",
+    "title",
+    "label",
+    "light_cleaned_title",
+    "light_cleaned_body",
+    "cleaned_title",
+    "cleaned_body",
+]
+DEVICE = "cuda" if cuda.is_available() else "cpu"
 
 
-class BertLayer(tf.layers.Layer):
-    def __init__(self, n_fine_tune_layers=10, **kwargs):
-        self.n_fine_tune_layers = n_fine_tune_layers
-        self.trainable = True
-        self.output_size = 768
-        super(BertLayer, self).__init__(**kwargs)
+class TensorIndexDataset(TensorDataset):
+    def __getitem__(self, index):
+        """
+        Returns in addition to the actual data item also its index (useful when assign a prediction to a item)
+        """
+        return index, super().__getitem__(index)
 
-    def build(self, input_shape):
-        self.bert = hub.Module(
-            bert_path,
-            trainable=self.trainable,
-            name="{}_module".format(self.name)
+
+class BertMultiClassifier(nn.Module):
+    def __init__(self, labels_count, hidden_dim=768, dropout=0.1):
+        super().__init__()
+
+        self.bert = BertModel.from_pretrained("bert-base-uncased")
+        self.dropout = nn.Dropout(dropout)
+        self.linear = nn.Linear(hidden_dim, labels_count)
+        self.softmax = nn.Softmax()
+
+    def forward(self, tokens, masks):
+        _, pooled_output = self.bert(
+            tokens, attention_mask=masks, output_all_encoded_layers=False
         )
-        trainable_vars = self.bert.variables
+        dropout_output = self.dropout(pooled_output)
 
-        # Remove unused layers
-        trainable_vars = [var for var in trainable_vars if not "/cls/" in var.name]
+        linear_output = self.linear(dropout_output)
+        proba = self.softmax(linear_output)
 
-        # Select how many layers to fine tune
-        trainable_vars = trainable_vars[-self.n_fine_tune_layers:]
+        return proba
 
-        # Add to trainable weights
-        for var in trainable_vars:
-            self._trainable_weights.append(var)
 
-        # Add non-trainable weights
-        for var in self.bert.variables:
-            if var not in self._trainable_weights:
-                self._non_trainable_weights.append(var)
+class ExtraBertMultiClassifier(nn.Module):
+    def __init__(
+        self, labels_count, hidden_dim=768, mlp_dim=100, extras_dim=0, dropout=0.1,
+    ):
+        super().__init__()
 
-        super(BertLayer, self).build(input_shape)
-
-    def call(self, inputs):
-        inputs = [K.cast(x, dtype="int32") for x in inputs]
-        input_ids, input_mask, segment_ids = inputs
-        bert_inputs = dict(
-            input_ids=input_ids, input_mask=input_mask, segment_ids=segment_ids
+        self.bert = BertModel.from_pretrained("bert-base-uncased")
+        self.dropout = nn.Dropout(dropout)
+        self.mlp = nn.Sequential(
+            nn.Linear(hidden_dim + extras_dim, mlp_dim),
+            nn.ReLU(),
+            nn.Linear(mlp_dim, mlp_dim),
+            nn.ReLU(),
+            nn.Linear(mlp_dim, labels_count),
         )
-        result = self.bert(inputs=bert_inputs, signature="tokens", as_dict=True)[
-            "pooled_output"
-        ]
-        return result
+        self.softmax = nn.Softmax()
 
-    def compute_output_shape(self, input_shape):
-        return (input_shape[0], self.output_size)
+    def forward(self, tokens, masks, extras):
+        _, pooled_output = self.bert(
+            tokens, attention_mask=masks, output_all_encoded_layers=False
+        )
+        dropout_output = self.dropout(pooled_output)
 
-def create_train_validation_sets(train):
-    TOTAL_BATCHES = math.ceil(len(sorted_reviews_labels) / BATCH_SIZE)
-    TEST_BATCHES = TOTAL_BATCHES // 10
-    batched_dataset.shuffle(TOTAL_BATCHES)
-    test_data = batched_dataset.take(TEST_BATCHES)
-    train_data = batched_dataset.skip(TEST_BATCHES)
+        concat_output = cat((dropout_output, extras), dim=1)
+        mlp_output = self.mlp(concat_output)
+        proba = self.softmax(mlp_output)
 
-    return train_data, test_data
+        return proba
 
 
-def preprocess_for_bert():
-    BertTokenizer = bert.bert_tokenization.FullTokenizer
-    bert_layer = hub.KerasLayer(
-        "https://tfhub.dev/tensorflow/bert_en_uncased_L-12_H-768_A-12/1",
-        trainable=False,
+def train(model, optimizer, train_dataloader, metadata=None):
+
+    for epoch_num in range(NUM_TRAIN_EPOCHS):
+        print(f"Epoch {epoch_num + 1}")
+        model.train()
+        train_loss = 0
+
+        for step_num, batch_data in enumerate(tqdm(train_dataloader, desc="Iteration")):
+            if metadata:
+                token_ids, masks, extras, true_labels = tuple(
+                    t.to(DEVICE) for t in batch_data
+                )
+                probas = model(token_ids, masks, extras)
+            else:
+                token_ids, masks, true_labels = tuple(t.to(DEVICE) for t in batch_data)
+                probas = model(token_ids, masks)
+
+            loss_func = nn.BCELoss()
+            batch_loss = loss_func(probas[0], true_labels)
+            train_loss += batch_loss.item()
+
+            model.zero_grad()
+            batch_loss.backward()
+            optimizer.step()
+
+        print(f"Epoch {epoch_num + 1} loss: {train_loss / (step_num + 1)}")
+
+    return model
+
+
+def score(model, data_loader, metadata=None):
+
+    model.eval()
+    output_ids = []
+    outputs = None
+
+    with no_grad():
+        for step_num, batch_item in enumerate(data_loader):
+            batch_ids, batch_data = batch_item
+
+            if metadata:
+                token_ids, masks, extras, _ = tuple(t.to(DEVICE) for t in batch_data)
+                logits = model(token_ids, masks, extras)
+
+            else:
+                token_ids, masks, _ = tuple(t.to(DEVICE) for t in batch_data)
+                logits = model(token_ids, masks)
+
+            logits_np = logits.cpu().detach().numpy()
+
+            if not outputs:
+                outputs = logits_np
+            else:
+                outputs = np.vstack((outputs, logits_np))
+
+            output_ids += batch_ids.tolist()
+
+        print("Evaluation complete")
+
+        return output_ids, outputs
+
+
+def get_model(labels, metadata_cols=None):
+
+    if metadata_cols:
+        model = ExtraBertMultiClassifier(
+            labels_count=len(labels),
+            hidden_dim=HIDDEN_DIM,
+            extras_dim=len(metadata_cols),
+            mlp_dim=MLP_DIM,
+        )
+    else:
+        model = BertMultiClassifier(labels_count=len(labels), hidden_dim=HIDDEN_DIM,)
+
+    return model
+
+
+def text_to_train_tensors(texts, tokenizer, max_seq_length):
+    train_tokens = list(
+        map(lambda t: ["[CLS]"] + tokenizer.tokenize(t)[: max_seq_length - 1], texts)
     )
-    vocabulary_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
-    to_lower_case = bert_layer.resolved_object.do_lower_case.numpy()
-    tokenizer = BertTokenizer(vocabulary_file, to_lower_case)
+    train_tokens_ids = list(map(tokenizer.convert_tokens_to_ids, train_tokens))
+    train_tokens_ids = pad_sequences(
+        train_tokens_ids,
+        maxlen=max_seq_length,
+        truncating="post",
+        padding="post",
+        dtype="int",
+    )
 
-    def _tokenize(text):
-        return tokenizer.convert_tokens_to_ids(tokenizer.tokenize(text))
+    train_masks = [[float(i > 0) for i in ii] for ii in train_tokens_ids]
 
-    tokenized_text = [_tokenize(text) for text in corpus]
-
-    return tokenized_text
+    return tensor(train_tokens_ids), tensor(train_masks)
 
 
-def prepare_batch():
-    reviews_with_len = [
-        [text, y[i], len(text)] for i, text in enumerate(tokenized_text)
+def convert_df_to_tensor(df, dataset_cls, metadata_cols=None):
+    texts = [
+        t + ".\n" + df["light_cleaned_body"] for t in df["light_cleaned_title"].values
     ]
+    y_vals = df["label"].values
+    train_y_tensor = tensor(y_vals).float()
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
 
-    # sort by length
-    reviews_with_len.sort(key=lambda x: x[2])
+    if metadata_cols:
+        metadata = df[metadata_cols].values
 
-    sorted_text_labels = [
-        (review_lab[0], review_lab[1]) for review_lab in reviews_with_len
-    ]
+        train_tokens_tensor, train_masks_tensor = text_to_train_tensors(
+            texts, tokenizer, MAX_SEQ_LENGTH
+        )
+        train_extras_tensor = tensor(metadata, dtype=tf_float)
 
-    processed_dataset = tf.data.Dataset.from_generator(
-        lambda: sorted_text_labels, output_types=(tf.int32, tf.int32)
-    )
+        train_dataset = dataset_cls(
+            train_tokens_tensor, train_masks_tensor, train_extras_tensor, train_y_tensor
+        )
 
-    BATCH_SIZE = 32
-    batched_dataset = processed_dataset.padded_batch(
-        BATCH_SIZE, padded_shapes=((None,), ())
-    )
+    else:
+        train_tokens_tensor, train_masks_tensor = text_to_train_tensors(
+            texts, tokenizer, MAX_SEQ_LENGTH
+        )
+        train_dataset = dataset_cls(
+            train_tokens_tensor, train_masks_tensor, train_y_tensor
+        )
+
+    return DataLoader(train_dataset, batch_size=BATCH_SIZE)
 
 
-def run_model_train():
-    # TODO: Add BERT embedding layer
-    in_id = tf.keras.layers.Input(shape=(max_seq_length,), name="input_ids")
-    in_mask = tf.keras.layers.Input(shape=(max_seq_length,), name="input_masks")
-    in_segment = tf.keras.layers.Input(shape=(max_seq_length,), name="segment_ids")
-    bert_inputs = [in_id, in_mask, in_segment]
+def run_model_fit():
+    df = pd.read_parquet(PREPROCESSING_PATH)
+    labels = df["label"].unique()
+    metadata_cols = [x for x in df.colums if x not in NOT_METADATA_COLS]
 
-    # Instantiate the custom Bert Layer defined above
-    bert_output = BertLayer(n_fine_tune_layers=10)(bert_inputs)
+    train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
+    model = get_model(labels)
 
-    # Build the rest of the classifier
-    dense = tf.keras.layers.Dense(256, activation='relu')(bert_output)
-    pred = tf.keras.layers.Dense(1, activation='sigmoid')(dense)
+    if DEVICE == "cuda":
+        model.cuda()
 
-    model = tf.keras.models.Model(inputs=bert_inputs, outputs=pred)
-    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-    model.fit(
-        [train_input_ids, train_input_masks, train_segment_ids],
-        train_labels,
-        validation_data=([test_input_ids, test_input_masks, test_segment_ids], test_labels),
-        epochs=1,
-        batch_size=32
-    )
+    optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
+
+    # Train WITHOUT metadata
+    train_dataloader = convert_df_to_tensor(train_df, TensorDataset)
+    trained_model = train(model, optimizer=optimizer, train_dataloader=train_dataloader)
+
+    score_dataloader = convert_df_to_tensor(val_df, TensorIndexDataset)
+    output_ids, output = score(trained_model, score_dataloader)
+
+    # Train WITH metadata
+    train_dataloader = convert_df_to_tensor(train_df, TensorDataset, metadata_cols=metadata_cols)
+    trained_model = train(model, optimizer=optimizer, train_dataloader=train_dataloader, metadata=metadata_cols)
+
+    score_dataloader = convert_df_to_tensor(val_df, TensorIndexDataset, metadata_cols=metadata_cols)
+    output_ids, output = score(trained_model, score_dataloader, metadata=metadata_cols)

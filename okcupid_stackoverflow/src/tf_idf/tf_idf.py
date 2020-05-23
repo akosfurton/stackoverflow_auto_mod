@@ -1,4 +1,24 @@
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+import joblib
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+import pandas as pd
+import numpy as np
+
+from okcupid_stackoverflow.utils.evaluate_model.evaluate_model import run_evaluate_model
+
+
+def _create_train_validation_set(df):
+
+    train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
+
+    train_x = train_df["cleaned_body"]
+    train_y = train_df["label"]
+
+    val_x = val_df["cleaned_body"]
+    val_y = val_df["label"]
+
+    return train_x, train_y, val_x, val_y
 
 
 def create_vocab_word_count(df, col_nm, max_features=None):
@@ -21,6 +41,45 @@ def fit_idf(word_count_vector):
     tfidf_transformer.fit(word_count_vector)
 
     return tfidf_transformer
+
+
+def fit_tf_idf_vector(df):
+
+    train_x, train_y, val_x, val_y = _create_train_validation_set(df)
+
+    vectorizer = TfidfVectorizer(
+        strip_accents="unicode",
+        analyzer="word",
+        ngram_range=(1, 4),
+        norm="l2",
+        max_features=10000,
+    )
+
+    vectorizer.fit(train_x)
+    x_train = vectorizer.transform(train_x)
+    x_val = vectorizer.transform(val_x)
+
+    return x_train, train_y, x_val, val_y
+
+
+def fit_logistic_reg_on_tf_idf(x_train, y_train, save_external=False):
+
+    clf = LogisticRegression(solver="lbfgs")
+    clf.fit(x_train, y_train)
+
+    if save_external:
+        joblib.dump(clf, "tf_idf_logistic.pkl")
+
+    return clf
+
+
+def evaluate_logistic_reg_on_tf_idf(clf, x_val, y_val):
+    df = pd.DataFrame()
+    df["label"] = y_val
+    df["pred_prob"] = clf.predict_proba(x_val)[:, 1]
+    df["pred"] = np.where(df["pred_prob"] >= 0.5, 1, 0)
+
+    run_evaluate_model(df)
 
 
 def predict_idf(doc, tfidf_transformer, cv):
