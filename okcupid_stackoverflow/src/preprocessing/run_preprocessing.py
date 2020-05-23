@@ -45,6 +45,18 @@ def strip_html_tags(text):
     return text
 
 
+def strip_urls(text):
+    # from geeksforgeeks.org/python-check-url-string
+    url_regex = re.compile(
+        r"(?i)\b((?:http?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)"
+        r"(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()"
+        r"<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+    )
+    text = url_regex.sub("replacedurl", text)
+
+    return text
+
+
 def convert_accented_characters(text):
     text = (
         unicodedata.normalize("NFKD", text)
@@ -66,8 +78,8 @@ def remove_punctuation(text):
     return text
 
 
-def lemmatize_text(text):
-    nlp = en_core_web_sm.load()
+def lemmatize_text(text, nlp):
+
     text = nlp(text)
     text = " ".join(
         [word.lemma_ if word.lemma_ != "-PRON-" else word.text for word in text]
@@ -118,27 +130,34 @@ def calc_num_words_in_code_blocks(text):
     return n_words
 
 
-def normalize_text(doc, deep_clean=False):
+def normalize_text(doc, deep_clean=False, nlp=None):
     # FOR BERT, Don't need to remove punctuation, don't need to remove stop-words
     if not deep_clean:
         doc = doc.lower()
 
         doc = strip_html_tags(doc)
+        doc = strip_urls(doc)
         doc = convert_accented_characters(doc)
         doc = expand_contractions(doc)
         doc = remove_multiple_spaces(doc)
 
+        # Tried to use the normalise library, but too slow
+        # Would use it for converting to/from numbers, percents, abbreviations
+
+        # Depending on text corpus, would want to process emojis as well
+        # However, SO is not very emoji friendly
+
     else:
         assert doc == doc.lower(), "text has not been cleaned yet."
         doc = remove_punctuation(doc)
-        doc = lemmatize_text(doc)
+        doc = lemmatize_text(doc, nlp=nlp)
         doc = remove_stopwords(doc)
 
     return doc
 
 
 def run_preprocessing():
-    df = load_raw_data("data/raw/interview_dataset.csv")
+    df = load_raw_data("../data/raw/interview_dataset.csv")
 
     # The removal of HTML tags will also remove the code block delimiter
     df["num_code_blocks"] = df["body"].apply(calc_num_code_blocks)
@@ -159,16 +178,17 @@ def run_preprocessing():
     df["num_chars_body"] = df["body"].apply(calc_num_chars)
     df["num_punctuation"] = df["body"].apply(calc_num_punctuation_chars)
 
+    nlp = en_core_web_sm.load()
     # Normalize Text
     df["cleaned_title"] = (
-        df["title"]
+        df["light_cleaned_title"]
         .swifter.allow_dask_on_strings()
-        .apply(normalize_text, deep_clean=True)
+        .apply(normalize_text, deep_clean=True, nlp=nlp)
     )
     df["cleaned_body"] = (
-        df["body"]
+        df["light_cleaned_body"]
         .swifter.allow_dask_on_strings()
-        .apply(normalize_text, deep_clean=True)
+        .apply(normalize_text, deep_clean=True, nlp=nlp)
     )
 
     # Calculate TF_IDF features
