@@ -221,6 +221,7 @@ def run_preprocessing():
     )
 
     df["cleaned_text"] = df["cleaned_title"] + " " + df["cleaned_body"]
+    df["cleaned_text"] = df["cleaned_text"].apply(remove_multiple_spaces)
     df["num_words_body_cleaned"] = df["cleaned_body"].apply(calc_num_words)
     df["pct_words_meaning"] = df["num_words_body_cleaned"] / df["num_words_body"]
 
