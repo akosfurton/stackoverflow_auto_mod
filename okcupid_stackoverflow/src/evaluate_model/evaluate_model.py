@@ -10,10 +10,12 @@ from sklearn.metrics import (
     f1_score,
     confusion_matrix,
     classification_report,
+    log_loss,
 )
 
 
-def _get_metrics(true_labels, predicted_labels):
+def _get_metrics(true_labels, predicted_labels, prob_labels):
+    print("Log Loss:", np.round(log_loss(true_labels, prob_labels)), 4)
     print("Accuracy:", np.round(accuracy_score(true_labels, predicted_labels), 4))
     print(
         "Precision:",
@@ -51,10 +53,16 @@ def _display_classification_report(true_labels, predicted_labels, classes=(1, 0)
     print(report)
 
 
-def display_model_performance_metrics(true_labels, predicted_labels, classes=(1, 0)):
+def display_model_performance_metrics(
+    true_labels, predicted_labels, prob_labels, classes=(1, 0)
+):
     print("Model Performance metrics:")
     print("-" * 30)
-    _get_metrics(true_labels=true_labels, predicted_labels=predicted_labels)
+    _get_metrics(
+        true_labels=true_labels,
+        predicted_labels=predicted_labels,
+        prob_labels=prob_labels,
+    )
     print("\nModel Classification report:")
     print("-" * 30)
     _display_classification_report(
@@ -94,5 +102,5 @@ def run_evaluate_model(df):
     assert "pred" in df, "Evaluation dataframe is missing column pred"
     assert "pred_prob" in df, "Evaluation dataframe is missing column pred_prob"
 
-    display_model_performance_metrics(df["label"], df["pred"])
+    display_model_performance_metrics(df["label"], df["pred"], df["pred_prob"])
     plot_model_roc_curve(df["label"], df["pred_prob"])
