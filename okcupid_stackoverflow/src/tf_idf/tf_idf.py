@@ -48,10 +48,8 @@ def fit_tf_idf_vector(df):
     train_x, train_y, val_x, val_y = _create_train_validation_set(df)
 
     vectorizer = TfidfVectorizer(
-        strip_accents="unicode",
         analyzer="word",
         ngram_range=(1, 4),
-        norm="l2",
         max_features=10000,
     )
 
