@@ -9,7 +9,9 @@ from okcupid_stackoverflow.utils.evaluate_model.evaluate_model import run_evalua
 
 
 def _create_train_validation_set(df):
-
+    # No need to shuffle (0s and 1s appear randomly distributed in dataset, not all 0s then all 1s)
+    # No need to stratify (both classes are ~50%, should be approx maintained with random split)
+    # Stratify is most useful with infrequent labels which may disappear from either train or test
     train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
 
     train_x = train_df["cleaned_body"]
