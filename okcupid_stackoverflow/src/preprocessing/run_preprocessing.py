@@ -47,14 +47,17 @@ def strip_html_tags(text):
 
 
 def strip_urls(text):
+    # slow...
     # from geeksforgeeks.org/python-check-url-string
-    url_regex = re.compile(
-        r"(?i)\b((?:http?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)"
-        r"(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()"
-        r"<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-    )
-    text = url_regex.sub("replacedurl", text)
+    # url_regex = re.compile(
+    #     r"(?i)\b((?:http?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)"
+    #     r"(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()"
+    #     r"<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+    # )
+    # text = url_regex.sub("replacedurl", text)
 
+    stop_words = ("https://", "http://")
+    text = " ".join([x for x in text.split() if not x.startswith(stop_words)])
     return text
 
 
@@ -226,3 +229,5 @@ def run_preprocessing():
     df["pct_words_meaning"] = df["num_words_body_cleaned"] / df["num_words_body"]
 
     df.to_parquet("../data/processed/cleaned.parquet")
+
+    return df
