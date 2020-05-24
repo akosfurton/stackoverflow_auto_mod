@@ -15,7 +15,7 @@ from sklearn.metrics import (
 
 
 def _get_metrics(true_labels, predicted_labels, prob_labels):
-    print("Log Loss:", np.round(log_loss(true_labels, prob_labels)), 4)
+    print("Log Loss:", np.round(log_loss(true_labels, prob_labels), 4))
     print("Accuracy:", np.round(accuracy_score(true_labels, predicted_labels), 4))
     print(
         "Precision:",
