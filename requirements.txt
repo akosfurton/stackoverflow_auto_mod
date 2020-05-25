@@ -1,4 +1,4 @@
-Pandas==1.0.3
+Pandas==0.25.3
 numpy==1.18.4
 scikit-learn==0.23.1
 matplotlib==3.2.1
@@ -11,5 +11,6 @@ joblib==0.15.1
 torch==1.5.0
 tqdm==4.46.0
 transformers==2.10.0
-wordcloud
-pyarrow
+
+click==7.1.2
+apache-airflow[postgres]

@@ -9,7 +9,7 @@ import numpy as np
 from nltk.corpus import stopwords
 from pandas.core.common import flatten
 from textstat import textstat
-import swifter
+import swifter  # Is used as a .swifter call for df.apply
 
 
 def load_raw_data(data_path):
@@ -178,8 +178,8 @@ def normalize_text(doc, deep_clean=False, nlp=None):
     return doc
 
 
-def run_preprocessing():
-    df = load_raw_data("../data/raw/interview_dataset.csv")
+def run_preprocessing(base_folder, save_external=False):
+    df = load_raw_data(f"{base_folder}/data/raw/interview_dataset.csv")
 
     # The removal of HTML tags will also remove the code block delimiter
     df["num_code_blocks"] = df["body"].apply(calc_num_code_blocks)
@@ -225,6 +225,7 @@ def run_preprocessing():
     df["num_words_body_cleaned"] = df["cleaned_body"].apply(calc_num_words)
     df["pct_words_meaning"] = df["num_words_body_cleaned"] / df["num_words_body"]
 
-    df.to_parquet("../data/processed/cleaned.parquet")
+    if save_external:
+        df.to_parquet(f"{base_folder}/data/processed/cleaned.parquet")
 
     return df

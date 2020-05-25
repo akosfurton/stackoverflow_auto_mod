@@ -246,13 +246,54 @@ Spam may be considered to be more of an adversarial attack. Spam is targeted
  
  # Running the code
  - requirements.txt AND dockerfile
- - describe CLI for run_preprocessing, tf_idf, evaluate_model
- - describe Airflow for automated training
- - describe Flask for automated serving
+ 
+ ## CLI Interface
+To run the pipeline, a CLI interface has been created in the
+  okcupid_stackoverflow package in the `run.py` script.
+  
+The CLI interface takes 3 parameters. The parameters are the run_name (used
+for distinguishing multiple model runs and providing a unique ID to save
+particular models), the module (preprocessing or model fitting), and
+use_metadata (which toggles the inclusion of metadata about the post in the
+ model fitting step)
+ 
+To run the code from the CLI interface, please use the following syntax from
+the top level folder in the repository:
+`python okcupid_stackoverflow/run.py --run_name=<INSERT RUN NAME> --module
+=<INSERT MODULE> --use_metadata`
+
+## Airflow Orchestration
+
+#TODO: Insert short blurb about Airflow
+
+To run the pipeline in a more automated fashion, an Airflow server has been
+ set up at `INSERT IP ADDRESS HERE`. To trigger a particular run of the
+  pipeline, please use the entry point found at `bin/airflow_trigger.sh`
+  
+For example, to trigger a manual run of the tf_idf pipeline: `bash bin
+/airflow_trigger.sh -d tf_idf_pipeline -r test_123_must_be_unique -p "--use_metadata"`
+
+This will run the pre-processing task first, and upon completion run the
+ model_fitting and model_evaluation tasks. If any of the tasks fail, the
+  Airflow server will send an email to the email address listed at the top of
+   the DAG definition file (`dags/tf_idf_pipeline.py`)
+
+## Serving Text Predictions with Flask 
+- describe Flask for automated serving
  
  # Reflections
- - If I did this assignment again, I would have 
- - If I would have more time on the assignment, I would
+ - If I did this assignment again, I would have not done anything
+  significantly differently. I really appreciated the directions for being
+   clean and concise, with a detailed objective. I also appreciated the
+    explicit call out that the objective is NOT to create the best and most
+     accurate model. I selected the TF-IDF model because it is quick to
+      prototype and "good enough" for the time spent on the assignment. The
+       likely "best" model for this question would be a transfer learning
+        approach from a NN Transformer model
+        such as BERT. With production grade systems (especially access to
+         GPUs), I would select a pre-trained BERT model, fine tune the last
+          few layers and embed the metadata features calculated into the NN
+           architecture.
  
  # Dataset Issues
  - None noticed, very well structured dataset (almost too well structured

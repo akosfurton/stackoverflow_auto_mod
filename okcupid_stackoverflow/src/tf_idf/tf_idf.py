@@ -1,23 +1,32 @@
 import joblib
-from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer, TfidfVectorizer
+from sklearn.feature_extraction.text import (
+    CountVectorizer,
+    TfidfTransformer,
+    TfidfVectorizer,
+)
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 import pandas as pd
 import numpy as np
 
-from okcupid_stackoverflow.utils.evaluate_model.evaluate_model import run_evaluate_model
+from okcupid_stackoverflow.utils.constants import NOT_METADATA_COLS
+from okcupid_stackoverflow.utils.evaluate_model import run_evaluate_model
 
 
-def _create_train_validation_set(df):
+def _create_train_validation_set(df, use_metadata=False, metadata_cols=None):
     # No need to shuffle (0s and 1s appear randomly distributed in dataset, not all 0s then all 1s)
     # No need to stratify (both classes are ~50%, should be approx maintained with random split)
     # Stratify is most useful with infrequent labels which may disappear from either train or test
     train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
 
-    train_x = train_df["cleaned_body"]
+    x_cols = ["cleaned_body"]
+    if use_metadata:
+        x_cols += metadata_cols
+
+    train_x = train_df[x_cols]
     train_y = train_df["label"]
 
-    val_x = val_df["cleaned_body"]
+    val_x = val_df[x_cols]
     val_y = val_df["label"]
 
     return train_x, train_y, val_x, val_y
@@ -45,30 +54,36 @@ def fit_idf(word_count_vector):
     return tfidf_transformer
 
 
-def fit_tf_idf_vector(df):
+def fit_tf_idf_vector(df, use_metadata, metadata_cols=None):
 
-    train_x, train_y, val_x, val_y = _create_train_validation_set(df)
-
-    vectorizer = TfidfVectorizer(
-        analyzer="word",
-        ngram_range=(1, 4),
-        max_features=10000,
+    train_x, train_y, val_x, val_y = _create_train_validation_set(
+        df, use_metadata=use_metadata, metadata_cols=metadata_cols
     )
 
-    vectorizer.fit(train_x)
-    x_train = vectorizer.transform(train_x)
-    x_val = vectorizer.transform(val_x)
+    vectorizer = TfidfVectorizer(
+        analyzer="word", ngram_range=(1, 4), max_features=10000,
+    )
+
+    vectorizer.fit(train_x["cleaned_body"])
+    x_train = vectorizer.transform(train_x["cleaned_body"])
+    x_val = vectorizer.transform(val_x["cleaned_body"])
+
+    if use_metadata:
+        x_train = pd.concat([x_train, train_x[metadata_cols]], axis=1)
+        x_val = pd.concat([x_val, val_x[metadata_cols]], axis=1)
 
     return x_train, train_y, x_val, val_y
 
 
-def fit_logistic_reg_on_tf_idf(x_train, y_train, save_external=False):
+def fit_logistic_reg_on_tf_idf(
+    x_train, y_train, save_external=False, base_folder=None, run_id=None
+):
 
     clf = LogisticRegression(solver="lbfgs")
     clf.fit(x_train, y_train)
 
     if save_external:
-        joblib.dump(clf, "tf_idf_logistic.pkl")
+        joblib.dump(clf, f"{base_folder}/models/tf_idf/{run_id}_tf_idf_logistic.pkl")
 
     return clf
 
@@ -111,3 +126,22 @@ def _extract_top_n_from_vector(feature_names, sorted_items, top_n=10):
         results[feature_vals[idx]] = score_vals[idx]
 
     return results
+
+
+def run_fit_tf_idf(base_folder, run_id, save_external=True, use_metadata=False):
+    df = pd.read_parquet(f"{base_folder}/data/processed/cleaned.parquet")
+
+    metadata_cols = [x for x in df.columns if x not in NOT_METADATA_COLS]
+
+    x_train, train_y, x_val, val_y = fit_tf_idf_vector(
+        df, use_metadata=use_metadata, metadata_cols=metadata_cols
+    )
+    clf = fit_logistic_reg_on_tf_idf(
+        x_train,
+        train_y,
+        save_external=save_external,
+        base_folder=base_folder,
+        run_id=run_id,
+    )
+
+    evaluate_logistic_reg_on_tf_idf(clf, x_val, val_y)
