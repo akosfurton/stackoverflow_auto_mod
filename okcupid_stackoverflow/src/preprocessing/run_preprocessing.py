@@ -166,9 +166,6 @@ def normalize_text(doc, deep_clean=False, nlp=None):
         doc = expand_contractions(doc)
         doc = remove_multiple_spaces(doc)
 
-        # Tried to use the normalise library, but too slow
-        # Would use it for converting to/from numbers, percents, abbreviations
-
         # Depending on text corpus, would want to process emojis as well
         # However, SO is not very emoji friendly
 
