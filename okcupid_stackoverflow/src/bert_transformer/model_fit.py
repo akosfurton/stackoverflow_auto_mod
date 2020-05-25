@@ -1,8 +1,13 @@
+###############
+# The below code to fit a BERT model is not fully tested because I did not have access to a GPU
+# The logic and pseudo code should be mostly valid and require few tweaks to get to be working
+###############
+
 import numpy as np
 import pandas as pd
 from keras_preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
-from torch import nn, cat, no_grad, cuda, float as tf_float, tensor
+from torch import nn, cat, no_grad, cuda, float as tf_float, tensor, save
 from torch.utils.data import DataLoader, TensorDataset
 from torch.optim import Adam
 from tqdm import tqdm
@@ -211,8 +216,8 @@ def convert_df_to_tensor(df, dataset_cls, metadata_cols=None):
     return DataLoader(train_dataset, batch_size=BATCH_SIZE)
 
 
-def run_model_fit():
-    df = pd.read_parquet(PREPROCESSING_PATH)
+def run_fit_bert(base_folder, run_id, save_external=True, use_metadata=False):
+    df = pd.read_parquet(f"{base_folder}/data/processed/cleaned.parquet")
     labels = df["label"].unique()
     metadata_cols = [x for x in df.colums if x not in NOT_METADATA_COLS]
 
@@ -224,16 +229,19 @@ def run_model_fit():
 
     optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
 
-    # Train WITHOUT metadata
-    train_dataloader = convert_df_to_tensor(train_df, TensorDataset)
-    trained_model = train(model, optimizer=optimizer, train_dataloader=train_dataloader)
+    if not use_metadata:  # Train WITHOUT metadata
+        train_dataloader = convert_df_to_tensor(train_df, TensorDataset)
+        trained_model = train(model, optimizer=optimizer, train_dataloader=train_dataloader)
 
-    score_dataloader = convert_df_to_tensor(val_df, TensorIndexDataset)
-    output_ids, output = score(trained_model, score_dataloader)
+        score_dataloader = convert_df_to_tensor(val_df, TensorIndexDataset)
+        output_ids, output = score(trained_model, score_dataloader)
 
-    # Train WITH metadata
-    train_dataloader = convert_df_to_tensor(train_df, TensorDataset, metadata_cols=metadata_cols)
-    trained_model = train(model, optimizer=optimizer, train_dataloader=train_dataloader, metadata=metadata_cols)
+    else:  # Train WITH metadata
+        train_dataloader = convert_df_to_tensor(train_df, TensorDataset, metadata_cols=metadata_cols)
+        trained_model = train(model, optimizer=optimizer, train_dataloader=train_dataloader, metadata=metadata_cols)
 
-    score_dataloader = convert_df_to_tensor(val_df, TensorIndexDataset, metadata_cols=metadata_cols)
-    output_ids, output = score(trained_model, score_dataloader, metadata=metadata_cols)
+        score_dataloader = convert_df_to_tensor(val_df, TensorIndexDataset, metadata_cols=metadata_cols)
+        output_ids, output = score(trained_model, score_dataloader, metadata=metadata_cols)
+
+    if save_external:
+        save(trained_model.state_dict(), f"{base_folder}/models/bert/{run_id}_bert_transfer")

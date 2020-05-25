@@ -1,0 +1,35 @@
+FROM ubuntu:16.04
+
+RUN apt-get update && apt-get install software-properties-common
+
+RUN add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get update && apt-get install -y python3.7 python3.7-virtualenv
+
+ENV VIRTUAL_ENV=/opt/venv
+RUN python3.7 -m virtualenv --python=/usr/bin/python3.7 $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Install dependencies:
+COPY requirements.txt ./
+RUN pip install wheel
+RUN pip install --upgrade pip setuptools
+RUN pip install -r requirements.txt
+RUN pip install -e .
+
+RUN python -m nltk.downloader all
+
+# Set up jupyter notebooks
+RUN pip install jupyter
+RUN python -m ipykernel install --name okcupid_stackoverflow
+
+# Expose Airflow Port
+EXPOSE 8080
+
+# Expose Jupyter Port
+EXPOSE 8888
+
+# Copy repo into image
+COPY . .
+
+CMD ["bash"]
+

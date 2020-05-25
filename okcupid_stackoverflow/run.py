@@ -1,6 +1,7 @@
 import os
 import click
 
+from okcupid_stackoverflow.src.bert_transformer.model_fit import run_fit_bert
 from okcupid_stackoverflow.src.preprocessing.run_preprocessing import run_preprocessing
 from okcupid_stackoverflow.src.tf_idf.tf_idf import run_fit_tf_idf
 from okcupid_stackoverflow.utils.git_utils import get_git_root
@@ -34,6 +35,8 @@ def run(run_name, module, use_metadata):
         run_fit_tf_idf(
             git_root_loc, run_id=run_name, save_external=True, use_metadata=use_metadata
         )
+    elif module == "fit_bert":
+        run_fit_bert(git_root_loc, run_id=run_name, save_external=True, use_metadata=use_metadata)
 
     else:
         raise NotImplementedError(f"Module {module} is invalid")

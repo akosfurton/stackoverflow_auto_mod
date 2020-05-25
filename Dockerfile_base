@@ -1,0 +1,28 @@
+FROM python:3.7
+RUN pip install --upgrade pip
+
+# Install dependencies:
+COPY requirements.txt ./
+RUN pip install wheel setuptools
+RUN pip install -r requirements.txt
+RUN pip install -e .
+RUN python -m nltk.downloader all
+
+# Set up jupyter notebooks
+RUN pip install jupyter
+RUN python -m ipykernel install --name okcupid_stackoverflow
+
+# Expose Airflow Port
+EXPOSE 8080
+
+# Expose Jupyter Port
+EXPOSE 8888
+
+# Download raw training data
+RUN wget https://s3.amazonaws.com/techblog-static/interview_dataset.csv -O ./data/raw/interview_dataset.csv
+
+# Copy repo into image
+ADD . .
+
+CMD ["bash"]
+
