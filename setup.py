@@ -8,7 +8,7 @@ current_datetime_str = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
 setup(
     name="okcupid_stackoverflow",
-    version=f"1.0.{current_datetime_str}",
+    version="0.1",
     description="Repository for OK Cupid Take Home Interview",
     author="Akos Furton",
     author_email="akosfurton@gmail.com",

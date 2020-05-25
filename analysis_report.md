@@ -118,11 +118,64 @@ The following metadata features are computed:
 # Models
 
 ## Train / Test split
+To generalize solutions to new posts, the pipeline separates the posts into
+two distinct sets, a training set and a testing set. Because both classes
+are balanced at 50% of all posts and there exists no known temporal
+relationship across posts, we can randomly sample into the training and
+testing set. 
+   
+The model is trained on the set of posts (titles and post body) in the
+training set, and is validated by scoring posts on the unseen to the model
+test set. As long as the test posts are drawn from the same overall pool of
+posts as the training set, the model should generalize to new posts.
 
 ## TF-IDF
+The specific method used to distinguish off-topic versus acceptable posts is
+known as `TF-IDF`, which stands for Term Frequency - Inverse Document
+Frequency. The tf-idf value of a word increases proportionally to how
+frequent a word appears in a document relative to the words's frequency in
+the overall set of documents. This method is often used for text-based
+recommendation systems and serves as a useful baseline to compare more
+advanced Neural Network based algorithms. 
+      
+The pipeline calculates the tf-idf score for all words found in the (cleaned) 
+documents in the training set. These weightings are piped into a
+LogisticRegression classifier that attempts to distinguish the off-topic
+posts from the acceptable posts. Optionally, the metadata features may also
+be fed into the LogisticRegression classifier.
+   
+Posts in the test set are shown to the pre-trained classifier and are scored
+ with the model's "acceptability score" between 0 and 1. Note that the pre
+ -trained classifier (both the LogisticRegression and the TF-IDF weightings) has
+  not seen these posts before.
+  
+Because it does not require any GPUs for training, TF-IDF provides an
+acceptably complex baseline classifier for this task. It performs well at
+distinguishing posts between the classes, is quick to train, and
+straightforward to assign scores to new posts
 
 ## Bert Transformer
+One of the main drawback of the TF-IDF approach is its inability to look at
+more detailed syntactic patterns in text. It purely focuses on relative
+frequencies and word counts. However, the exact placement of words within a
+sentence also carry significant semantic meaning. 
 
+In addition, the TF-IDF model was trained solely on the set of StackOverflow
+ posts from the training set. This corpus of documents is comprehensive, but
+  not as comprehensive as other sets of text in the English language. A model
+   that has been pre-trained on a more general English language corpus (for
+    example, Wikipedia) would generalize syntactic patterns better than
+     purely StackOverflow posts. 
+     
+The above framework (pre-training a model on a general corpus, and fine
+ tuning it's final layers based on the specific set of texts) is known as
+  transfer learning. This approach would learn the English language's general
+   patterns and fine tune them to the specifics of StackOverflow post behavior
+   
+Therefore, a Transformer based model such as Google's BERT mitigates the most
+ significant disadvantages of the TF-IDF model. However, this approach is
+  significantly more computationally expensive (requires GPUs, lots of memory
+  ) and takes much longer to fine tune to the StackOverflow corpus than TF-IDF.
 
 # Model Evaluation Metrics
 To evaluate model performance, I used a comprehensive set of evaluation
@@ -133,9 +186,9 @@ To evaluate model performance, I used a comprehensive set of evaluation
 
 ## TF-IDF Model Scores
 For the TF-IDF model, the above mentioned scores are reported below:
-- AUC:
-- Accuracy: 
-- Log-Loss: (predicting 0.5 for everything = 0.693)
+- AUC: 0.86
+- Accuracy: 0.78 
+- Log-Loss: 0.46 (predicting 0.5 for everything = 0.693, lower is better)
 
 In all 3 metrics, the TF-IDF model performs considerably better than random
 and would provide valuable guidance to the poster regarding off-topic likelihood
@@ -172,7 +225,7 @@ AUC mitigates this risk by using a "cutoff" score to score models. All
  predict on highly imbalanced data, comparing true and false positive
  rates will create a model that truly learns to distinguish the classes.
  
-## Log Loss 
+## Log Loss
 In addition to AUC and accuracy, I report log-loss as a way to distinguish how 
 confident (or uncertain) the model is in its predictions. A model should be
  penalized for being confident about an incorrect prediction. In other words
@@ -204,23 +257,84 @@ importantly, either scenario is valid and the best plan of action depends on
 
 
 # Balanced vs Imbalanced Classes
-The provided dataset is perfectly balanced with 50% (50k) observations for both the positive (off-topic) and negative (acceptable)
+The provided dataset is perfectly balanced with 50% (50k) observations for both 
+the positive (off-topic) and negative (acceptable) cases. This dataset detail
+ allows for more lenient model metrics.
+ 
+From the information provided, the cost of classifying a positive versus a
+negative post is equal, which means that metrics such as accuracy are
+acceptable. 
+  
+With imbalanced data sets, accuracy stops being as relevant of a metric (the
+model can predict the majority class and get very good accuracy). In
+addition, with imbalanced costs to mis-prediction, accuracy becomes less
+relevant.
+   
+Because of these limitations, the pipeline reports accuracy and two metrics
+(AUC and log_loss) that mitigate the imbalance and mis-prediction cost
+limitations of accuracy.
 
 # Model Edge Cases
 Long posts (and titles)
+- Many NLP algorithms (in the interest of memory size and processing speed)
+look at only the first x words/characters of a document. In addition, the
+ term frequency (the TF in TF-IDF) metric may be calculated using a log of
+  term frequency (ln(TF)) because the difference between a term being present
+   1 vs 3 times is much greater than a term being present 100 vs 300 times.
+   
+- This issue is somewhat mitigated by adding metadata regarding a document's
+ length into the LogisticRegression classifier (in addition to the TF-IDF
+  vectors)
+
+
 Code syntax vs English syntax
+- The training corpus of many NLP algorithms is the English language. Even
+ though many computer languages use English words as syntax (for, in, while
+ , return), the semantic interpretation of the same words may differ from
+  standard usage in English. In addition, programming languages are
+   significantly more structured in meaning than unstructured text
+    descriptions. Therefore, algorithms may have difficulty distinguishing
+     between word and sentence interpretations between text and code
+     . In addition, code blocks may contain standard English within them in
+      the form of comments. These comments are delineated by different
+       characters (# in Python, // in SQL and C++) per language. Therefore to
+        interpret comments as standard English, a pre-model should be trained
+         to detect the code language first.
+         
+- This issue is somewhat mitigated by adding metadata regarding code comments
+ into a classifier. Examples of code metadata may include the presence
+ /absence of code, the length of code, the number of code snippets, and removing
+  code specific stopwords (public, static, void, def, return) depending on
+   the language detected.
 
 
 # Generalizing the Model - New Off-Topic posts
-Because the model was evaluated on data it was not trained on, it should
- generalize
- ## TODO: discuss train-test splits here. Would work well for a different sample of posts with the same labeling scheme (AS LONG AS SO keeps the same criteria for labeling a post as off-topic (and ofc the data is in english)) Discuss topic drift
+Because the model was evaluated on data it was not trained on, it generalizes
+ to new off-topic posts AS LONG AS the new off-topic posts match the sample
+  of posts in the training data. For example, the criteria for labeling a
+   post as off-topic should remain consistent. In addition, StackOverflow
+    consists of multiple topics, and the language semantics may differ by topic.
+   
+When new topics are introduced into new posts or the subjects discussed depart
+ from the historical StackOverflow corpus, the performance of the
+  classification model will start to degrade. For example, users may adjust
+   their behavior to avoid off-topic posts or realize that certain posts that
+    are truly off-topic are bypassing the off-topic filter.
+    
+To avoid the topic drift challenge and continue to generalize to new off
+-topic posts, the classification model (either TF-IDF, BERT, or another model
+) should be periodically re-trained on a newly updated set of posts. In
+ addition, the classifier model may choose to weight newer posts stronger to
+  more dynamically adjust to the most recent data
  
 # Generalizing the Model - New Reasons (Duplicates, Spam Posts)
 
-For duplicate posts, cosine similarity of the BERT vectors. Mark the most
- recently posted post a duplicate
+## Duplicates
+For duplicate posts, a cosine similarity metric of the TF-IDF/BERT vectors
+ would be used to classify similar posts. Mark the most recently posted post a
+  duplicate. 
 
+## Spam
 For spam posts, the model would likely perform better than random (spam may
  be considered a subset of off topic), but spam vs off-topic is a
  considerably different problem. Off-topic posts appear to be mainly one of
@@ -244,42 +358,7 @@ Spam may be considered to be more of an adversarial attack. Spam is targeted
  post flagging to moderators for further review, and banning users/IP
  Addresses that fail to follow site guidelines.
  
- # Running the code
- - requirements.txt AND dockerfile
  
- ## CLI Interface
-To run the pipeline, a CLI interface has been created in the
-  okcupid_stackoverflow package in the `run.py` script.
-  
-The CLI interface takes 3 parameters. The parameters are the run_name (used
-for distinguishing multiple model runs and providing a unique ID to save
-particular models), the module (preprocessing or model fitting), and
-use_metadata (which toggles the inclusion of metadata about the post in the
- model fitting step)
- 
-To run the code from the CLI interface, please use the following syntax from
-the top level folder in the repository:
-`python okcupid_stackoverflow/run.py --run_name=<INSERT RUN NAME> --module
-=<INSERT MODULE> --use_metadata`
-
-## Airflow Orchestration
-
-#TODO: Insert short blurb about Airflow
-
-To run the pipeline in a more automated fashion, an Airflow server has been
- set up at `INSERT IP ADDRESS HERE`. To trigger a particular run of the
-  pipeline, please use the entry point found at `bin/airflow_trigger.sh`
-  
-For example, to trigger a manual run of the tf_idf pipeline: `bash bin
-/airflow_trigger.sh -d tf_idf_pipeline -r test_123_must_be_unique -p "--use_metadata"`
-
-This will run the pre-processing task first, and upon completion run the
- model_fitting and model_evaluation tasks. If any of the tasks fail, the
-  Airflow server will send an email to the email address listed at the top of
-   the DAG definition file (`dags/tf_idf_pipeline.py`)
-
-## Serving Text Predictions with Flask 
-- describe Flask for automated serving
  
  # Reflections
  - If I did this assignment again, I would have not done anything
