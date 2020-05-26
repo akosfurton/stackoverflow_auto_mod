@@ -1,5 +1,6 @@
 import os
 
+import en_core_web_sm
 import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request
@@ -24,14 +25,19 @@ def predict():
         "title": request.form["post_title"],
         "body": request.form["post_body"],
     }
-    data = run_preprocessing("", df=pd.DataFrame([post]), save_external=False)
+    data = run_preprocessing("", df=pd.DataFrame([post]), save_external=False, nlp=nlp)
     x_pred = vectorizer.transform(data["cleaned_body"])
 
     metadata_cols = [x for x in data.columns if x not in NOT_METADATA_COLS]
     x_pred = hstack((x_pred, np.array(data[metadata_cols])))
     my_prediction = clf.predict_proba(x_pred)[:, 1][0]
 
-    return render_template("result.html", prediction=my_prediction)
+    return render_template(
+        "result.html",
+        prediction=my_prediction,
+        post_title=request.form["post_title"],
+        post_body=request.form["post_body"],
+    )
 
 
 if __name__ == "__main__":
@@ -41,17 +47,17 @@ if __name__ == "__main__":
     files = os.listdir(path)
     paths = [os.path.join(path, basename) for basename in files]
     latest_model_path = max(
-        [x for x in paths if "_logistic" in x],
-        key=os.path.getctime,
+        [x for x in paths if "_logistic" in x], key=os.path.getctime,
     )
     with open(latest_model_path, "rb") as saved_classifier:
         clf = load(saved_classifier)
 
     latest_vectorizer_path = max(
-        [x for x in paths if "_vectorizer" in x],
-        key=os.path.getctime,
+        [x for x in paths if "_vectorizer" in x], key=os.path.getctime,
     )
     with open(latest_vectorizer_path, "rb") as saved_vectorizer:
         vectorizer = load(saved_vectorizer)
+
+    nlp = en_core_web_sm.load()
 
     app.run(debug=True)

@@ -1,5 +1,7 @@
 import os
+
 import click
+import en_core_web_sm
 
 from okcupid_stackoverflow.src.bert_transformer.model_fit import run_fit_bert
 from okcupid_stackoverflow.src.preprocessing.run_preprocessing import run_preprocessing
@@ -41,7 +43,8 @@ def run(run_name, module, use_metadata):
     git_root_loc = pre_run_checks(module)
 
     if module == "pre_processing":
-        run_preprocessing(git_root_loc, save_external=True)
+        nlp = en_core_web_sm.load()
+        run_preprocessing(git_root_loc, save_external=True, nlp=nlp)
 
     elif module == "fit_tfidf":
         run_fit_tf_idf(

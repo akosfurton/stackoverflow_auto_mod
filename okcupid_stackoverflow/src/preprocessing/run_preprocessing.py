@@ -3,7 +3,6 @@ import string
 import unicodedata
 
 import contractions
-import en_core_web_sm
 import pandas as pd
 import numpy as np
 from nltk.corpus import stopwords
@@ -178,7 +177,7 @@ def normalize_text(doc, deep_clean=False, nlp=None):
     return doc
 
 
-def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False):
+def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False, nlp=None):
     if len(df) == 0:
         df = load_raw_data(f"{base_folder}/data/raw/interview_dataset.csv")
 
@@ -186,12 +185,21 @@ def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False):
     df["num_code_blocks"] = df["body"].apply(calc_num_code_blocks)
     df["num_words_code_blocks"] = df["body"].apply(calc_num_words_in_code_blocks)
 
-    df["light_cleaned_title"] = (
-        df["title"].swifter.allow_dask_on_strings().apply(normalize_text)
-    )
-    df["light_cleaned_body"] = (
-        df["body"].swifter.allow_dask_on_strings().apply(normalize_text)
-    )
+    if len(df) > 1:
+        df["light_cleaned_title"] = (
+            df["title"].swifter.allow_dask_on_strings().apply(normalize_text)
+        )
+        df["light_cleaned_body"] = (
+            df["body"].swifter.allow_dask_on_strings().apply(normalize_text)
+        )
+
+    else:
+        df["light_cleaned_title"] = (
+            df["title"].apply(normalize_text)
+        )
+        df["light_cleaned_body"] = (
+            df["body"].apply(normalize_text)
+        )
 
     df["light_cleaned_text"] = (
         df["light_cleaned_title"] + " " + df["light_cleaned_body"]
@@ -208,7 +216,6 @@ def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False):
     df["word_len_median"] = df["light_cleaned_body"].apply(calc_word_len_median)
     df["word_len_max"] = df["light_cleaned_body"].apply(calc_word_len_max)
 
-    nlp = en_core_web_sm.load()
     # Normalize Text
     if len(df) > 1:
         df["cleaned_title"] = (
