@@ -178,8 +178,8 @@ def normalize_text(doc, deep_clean=False, nlp=None):
     return doc
 
 
-def run_preprocessing(base_folder, df=None, save_external=False):
-    if not df:
+def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False):
+    if len(df) == 0:
         df = load_raw_data(f"{base_folder}/data/raw/interview_dataset.csv")
 
     # The removal of HTML tags will also remove the code block delimiter
@@ -210,16 +210,28 @@ def run_preprocessing(base_folder, df=None, save_external=False):
 
     nlp = en_core_web_sm.load()
     # Normalize Text
-    df["cleaned_title"] = (
-        df["light_cleaned_title"]
-        .swifter.allow_dask_on_strings()
-        .apply(normalize_text, deep_clean=True, nlp=nlp)
-    )
-    df["cleaned_body"] = (
-        df["light_cleaned_body"]
-        .swifter.allow_dask_on_strings()
-        .apply(normalize_text, deep_clean=True, nlp=nlp)
-    )
+    if len(df) > 1:
+        df["cleaned_title"] = (
+            df["light_cleaned_title"]
+            .swifter.allow_dask_on_strings()
+            .apply(normalize_text, deep_clean=True, nlp=nlp)
+        )
+        df["cleaned_body"] = (
+            df["light_cleaned_body"]
+            .swifter.allow_dask_on_strings()
+            .apply(normalize_text, deep_clean=True, nlp=nlp)
+        )
+
+    else:
+        # Don't use swifter
+        df["cleaned_title"] = (
+            df["light_cleaned_title"]
+            .apply(normalize_text, deep_clean=True, nlp=nlp)
+        )
+        df["cleaned_body"] = (
+            df["light_cleaned_body"]
+            .apply(normalize_text, deep_clean=True, nlp=nlp)
+        )
 
     df["cleaned_text"] = df["cleaned_title"] + " " + df["cleaned_body"]
     df["cleaned_text"] = df["cleaned_text"].apply(remove_multiple_spaces)

@@ -22,7 +22,7 @@ header{
 .main-header{
 			text-align:center;
 			background-color: blue;
-			height:100px;
+			height:30px;
 			width:100%;
 			margin:0px;
 		}
@@ -39,11 +39,9 @@ header h2{
 
 }
 
-
-
 .btn-info {background-color: #2196F3;
-	height:40px;
-	width:100px;} /* Blue */
+	height:25px;
+	width:150px;} /* Blue */
 .btn-info:hover {background: #0b7dda;}
 
 

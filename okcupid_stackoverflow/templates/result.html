@@ -17,9 +17,9 @@
 	<p style="color:blue;font-size:20;text-align: center;"><b>Results for Post</b></p>
 	<div class="results">
 
-	{% if prediction >= 0.5%}
+	{% if prediction < 0.5%}
 	<h2 style="color:blue;">Likely {% (1 - round(prediction, 2)) * 100 %}% Acceptable</h2>
-	{% elif prediction < 0.5%}
+	{% elif prediction >= 0.5%}
 	<h2 style="color:red;">Likely {% round(prediction, 2) * 100 %}% Off Topic</h2>
 	{% endif %}
 

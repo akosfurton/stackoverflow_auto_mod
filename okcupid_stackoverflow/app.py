@@ -1,4 +1,3 @@
-import glob
 import os
 
 import numpy as np
@@ -21,35 +20,38 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    root_dir = get_git_root(os.getcwd())
-    latest_model_path = max(
-        [x for x in glob.glob(f"{root_dir}/models/tf_idf") if "logistic" in x],
-        key=os.path.getctime,
-    )
-    latest_vectorizer_path = max(
-        [x for x in glob.glob(f"{root_dir}/models/tf_idf") if "vectorizer" in x],
-        key=os.path.getctime,
-    )
-
-    with open(latest_vectorizer_path, "rb") as saved_vectorizer:
-        vectorizer = load(saved_vectorizer)
-    with open(latest_model_path, "rb") as saved_classifier:
-        clf = load(saved_classifier)
-
     post = {
-        "post_title": request.form["post_title"],
-        "post_body": request.form["post_body"],
+        "title": request.form["post_title"],
+        "body": request.form["post_body"],
     }
-    data = pd.DataFrame.from_dict(post)
-    data = run_preprocessing("", df=data, save_external=False)
+    data = run_preprocessing("", df=pd.DataFrame([post]), save_external=False)
     x_pred = vectorizer.transform(data["cleaned_body"])
 
     metadata_cols = [x for x in data.columns if x not in NOT_METADATA_COLS]
     x_pred = hstack((x_pred, np.array(data[metadata_cols])))
-    my_prediction = clf.predict_proba(x_pred)[:, 1]
+    my_prediction = clf.predict_proba(x_pred)[:, 1][0]
 
     return render_template("result.html", prediction=my_prediction)
 
 
 if __name__ == "__main__":
     app.run(debug=True)
+
+    root_dir = get_git_root(os.getcwd())
+    path = f"{root_dir}/models/tf_idf"
+    files = os.listdir(path)
+    paths = [os.path.join(path, basename) for basename in files]
+    latest_model_path = max(
+        [x for x in paths if "_logistic" in x],
+        key=os.path.getctime,
+    )
+    with open(latest_model_path, "rb") as saved_classifier:
+        clf = load(saved_classifier)
+
+    latest_vectorizer_path = max(
+        [x for x in paths if "_vectorizer" in x],
+        key=os.path.getctime,
+    )
+    with open(latest_vectorizer_path, "rb") as saved_vectorizer:
+        vectorizer = load(saved_vectorizer)
+
