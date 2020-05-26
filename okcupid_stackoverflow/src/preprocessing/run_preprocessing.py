@@ -178,8 +178,9 @@ def normalize_text(doc, deep_clean=False, nlp=None):
     return doc
 
 
-def run_preprocessing(base_folder, save_external=False):
-    df = load_raw_data(f"{base_folder}/data/raw/interview_dataset.csv")
+def run_preprocessing(base_folder, df=None, save_external=False):
+    if not df:
+        df = load_raw_data(f"{base_folder}/data/raw/interview_dataset.csv")
 
     # The removal of HTML tags will also remove the code block delimiter
     df["num_code_blocks"] = df["body"].apply(calc_num_code_blocks)

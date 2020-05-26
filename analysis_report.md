@@ -331,8 +331,8 @@ To avoid the topic drift challenge and continue to generalize to new off
 
 ## Duplicates
 For duplicate posts, a cosine similarity metric of the TF-IDF/BERT vectors
- would be used to classify similar posts. Mark the most recently posted post a
-  duplicate. 
+would be used to classify similar posts. For posts that meet a desired
+threshold of similarity, mark the mos recently posted post as a duplicate. 
 
 ## Spam
 For spam posts, the model would likely perform better than random (spam may

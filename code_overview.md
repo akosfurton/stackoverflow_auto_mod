@@ -16,8 +16,11 @@ entire pipeline (setting up data directories, downloading source data). The
 provided Dockerfile will automatically set up an environment with all
 dependencies set up.
 
-- To create the and run the docker container: 
-`docker run -it -p 8888:8888 $(docker build -f Dockerfile_base .)`
+- To create the docker container:
+`docker build -f Dockerfile_base -t interview_v1 .`
+- To run the docker container:
+`docker run -it -p 8888:8888 interview_v1` and start a Jupyter notebook with
+ `jupyter notebook --ip 0.0.0.0 --no-browser --allow-root`
  
  
  ## CLI Interface

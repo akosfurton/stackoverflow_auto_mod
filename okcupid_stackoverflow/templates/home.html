@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Home</title>
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+	<header>
+		<div class="container">
+		<div id="brandname">
+			Off-Topic Post Detection for StackOverflow Posts
+		</div>
+
+	</div>
+	</header>
+
+	<div class="ml-container">
+
+		<form action="{{ url_for('predict')}}" method="POST">
+		<p>Enter Your Post Title Here</p>
+		<textarea name="post_title" rows="1" cols="80"></textarea>
+		<br/>
+
+		<p>Enter Your Message Here</p>
+		<textarea name="post_body" rows="16" cols="80"></textarea>
+		<br/>
+
+		<input type="submit" class="btn-info" value="View Likelihood">
+
+	</form>
+
+	</div>
+
+
+</body>
+</html>
