@@ -15,7 +15,7 @@ The preprocessing pipeline comprises of two key steps
 
 The text parsing and cleaning portion consists of two stages:
 ## Light Cleaning
-- The light cleaning portion of the text parsing removes errata from the
+The light cleaning portion of the text parsing removes errata from the
  text but does adjust punctuation, create word lemmas, or remove stop words.
 - This version of the parsed text is used for the metadata details
  calculation and any NLP NN models that have been trained on embeddings
@@ -46,7 +46,7 @@ The text parsing and cleaning portion consists of two stages:
          spelled with or without accents (cliche or naive) without changing
          their meaning
     - Expanding contractions
-        Contractions in English contain the same
+        - Contractions in English contain the same
          information as their expanded counterparts. Many English writers
          will use the contraction and expanded form interchangeably.
     - Removing multiple spaces
@@ -66,22 +66,25 @@ The text parsing and cleaning portion consists of two stages:
      emoji token.
           
 ## Heavy Cleaning
-    - The heavy cleaning portion of the text parsing standardizes individual
+The heavy cleaning portion of the text parsing standardizes individual
      words (more specifically tokens) into their base form and keeps only the
      essential portions of each text
-    - This version of the parsed text is used for training models that cannot
+- This version of the parsed text is used for training models that cannot
      embed relationships across word families (TF-IDF, Bag of Words)
-    - Specific steps in heavy cleaning include:
-        - Removing punctuation: the presence / absence of punctuation is
+- Specific steps in heavy cleaning include:
+    - Removing punctuation
+        - The presence / absence of punctuation is
          already captured in text metadata. In addition, multiple UTF-8 codes
           may represent the same character (single quote, double quote, comma
           ).
-        - Lemmatizing text: multiple distinct words contain very similar
+    - Lemmatizing text
+        - Multiple distinct words contain very similar
          meaning (stop, stopped, stops, stopping) and models should treat
          them as very similar in meaning. Converts all words to their base
           form (singular, present tense, non conjugated)
-        - Removing stopwords: Words with high frequency of occurrence (and
-        , is, I, she, it, or) often don't provide much additional meaning to
+    - Removing stopwords
+        - Words with high frequency of occurrence (and, is, I, she, it, or)
+         often don't provide much additional meaning to
          a sentence so they should be removed from the text.
 
 ## Metadata
@@ -190,19 +193,19 @@ To evaluate model performance, I used a comprehensive set of evaluation
  - Log Loss
 
 ## TF-IDF Model Scores
-For the TF-IDF model (without metadata), the above mentioned scores are reported
- below:
-- AUC: 0.86
-- Accuracy: 0.78 
-- Log-Loss: 0.46 (predicting 0.5 for everything = 0.693, lower is better)
-
 For the TF-IDF model (with metadata), the above mentioned scores are reported
  below:
-- AUC: 0.86
-- Accuracy: 0.78 
-- Log-Loss: 0.46 (predicting 0.5 for everything = 0.693, lower is better)
+- AUC: 0.87
+- Accuracy: 0.79 
+- Log-Loss: 0.4455 (predicting 0.5 for everything = 0.693, lower is better)
 
-Because the metadata model performs better, I prefer to use it in
+For the TF-IDF model (without metadata), the above mentioned scores are reported
+ below:
+- AUC: 0.79
+- Accuracy: 0.72 
+- Log-Loss: 0.59 (predicting 0.5 for everything = 0.693, lower is better)
+
+Because the metadata model performs better, it is preferred to use in
 production when metadata collection / processing is possible.
 
 In all 3 metrics, the both TF-IDF models perform considerably better than random
@@ -373,22 +376,19 @@ Spam may be considered to be more of an adversarial attack. Spam is targeted
  post flagging to moderators for further review, and banning users/IP
  Addresses that fail to follow site guidelines.
  
- 
- 
  # Reflections
- - If I did this assignment again, I would have not done anything
-  significantly differently. I really appreciated the directions for being
-   clean and concise, with a detailed objective. I also appreciated the
-    explicit call out that the objective is NOT to create the best and most
-     accurate model. I selected the TF-IDF model because it is quick to
-      prototype and "good enough" for the time spent on the assignment. The
-       likely "best" model for this question would be a transfer learning
-        approach from a NN Transformer model
-        such as BERT. With production grade systems (especially access to
-         GPUs), I would select a pre-trained BERT model, fine tune the last
-          few layers and embed the metadata features calculated into the NN
-           architecture.
+ If I did this assignment again, I would have not done anything
+significantly differently. I really appreciated the directions for being
+clean and concise, with a detailed objective. I also appreciated the
+explicit call out that the objective is NOT to create the best and most
+accurate model. I selected the TF-IDF model because it is quick to
+prototype and "good enough" for the time spent on the assignment. The
+likely "best" model for this question would be a transfer learning
+approach from a NN Transformer model
+such as BERT. With production grade systems (especially access to
+GPUs), I would select a pre-trained BERT model, fine tune the last
+few layers and embed the metadata features calculated into the NN architecture.
  
  # Dataset Issues
- - None noticed, very well structured dataset (almost too well structured
+None noticed, very well structured dataset (almost too well structured
   compared to nearly all industry data sets)

@@ -15,5 +15,5 @@ do
   esac
 done
 
-echo /home/airflow_user/airflow_user_venv/bin/airflow trigger_dag "$DAG_NAME" -r "$RUN_ID" --conf "{\"run_parameter\":\"$RUN_PARAMETERS\"}"
-/home/airflow_user/airflow_user_venv/bin/airflow trigger_dag "$DAG_NAME" -r "$RUN_ID" --conf "{\"run_parameter\":\"$RUN_PARAMETERS\"}"
+echo /home/airflow_user/airflow_user_venv/bin/airflow trigger_dag "$DAG_NAME" -r "$RUN_ID" --conf "{\"run_parameters\":\"$RUN_PARAMETERS\"}"
+/home/airflow_user/airflow_user_venv/bin/airflow trigger_dag "$DAG_NAME" -r "$RUN_ID" --conf "{\"run_parameters\":\"$RUN_PARAMETERS\"}"

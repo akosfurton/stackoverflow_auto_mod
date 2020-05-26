@@ -16,10 +16,10 @@ entire pipeline (setting up data directories, downloading source data). The
 provided Dockerfile will automatically set up an environment with all
 dependencies set up.
 
-- To create the docker container:
-`docker build -f Dockerfile_base -t interview_v1 .`
-- To run the docker container:
-`docker run -it -p 8888:8888 interview_v1` and start a Jupyter notebook with
+- To create the docker container for development:
+`docker build -f Dockerfile_base -t interview_v1 .` and run the docker
+ container:
+`docker run -it -p 8888:8888 interview_v1`. Start a Jupyter notebook with
  `jupyter notebook --ip 0.0.0.0 --no-browser --allow-root`
  
 - To create the docker container to run the Flask app that serves predictions:
@@ -70,11 +70,13 @@ provides automated alerting capabilities for the user to resolve and re-run
 the series of tasks.
 
 To run the pipeline in a more automated fashion, an Airflow server can be set 
-up. After setting up an Airflow server, trigger a particular run of the
-pipeline, with the entry point found at `bin/airflow_trigger.sh`
+up. After setting up an Airflow server, deploy/update a particular dag
+with the entry point found at `bin/airflow_deploy.sh`. Trigger a
+particular run of the pipeline with the entry point found at `bin
+/airflow_trigger.sh`
   
 For example, to trigger a manual run of the tf_idf pipeline: `bash bin
-/airflow_trigger.sh -d tf_idf_pipeline -r test_123_must_be_unique -p "--use_metadata"`
+/airflow_trigger.sh -d tf_idf_pipeline -r test_123_must_be_unique -p "y"`
 
 This will run the pre-processing task first, and upon completion run the
 model_fitting and model_evaluation tasks. If any of the tasks fail, the
