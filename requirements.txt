@@ -1,13 +1,13 @@
-apache-airflow[postgres]==1.10.10
 click==7.1.2
 contractions==0.0.24
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.0/en_core_web_sm-2.2.0.tar.gz
+Flask==1.1.2
 joblib==0.15.1
 matplotlib==3.2.1
 nltk==3.5
 numpy==1.18.4
 pandas==1.0.3
 scikit-learn==0.23.1
+scipy==1.4.1
 setuptools==46.4.0
 swifter==0.304
 textstat==0.6.2

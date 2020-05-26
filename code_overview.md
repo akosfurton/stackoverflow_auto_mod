@@ -22,6 +22,10 @@ dependencies set up.
 `docker run -it -p 8888:8888 interview_v1` and start a Jupyter notebook with
  `jupyter notebook --ip 0.0.0.0 --no-browser --allow-root`
  
+- To create the docker container to run the Flask app that serves predictions:
+`docker build -f Dockerfile_flask_app -t interview_v1_app .`
+and run with `docker run-it -p 5000:5000 interview_v1_app`
+ 
  
  ## CLI Interface
 To run the pipeline, a CLI interface has been created in the
@@ -35,29 +39,45 @@ use_metadata (which toggles the inclusion of metadata about the post in the
  
 To run the code from the CLI interface, please use the following syntax from
 the top level folder in the repository:
-`python okcupid_stackoverflow/run.py --run_name=<INSERT RUN NAME> --module
-=<INSERT MODULE> --use_metadata`
+`python okcupid_stackoverflow/run.py <INSERT RUN NAME> <INSERT MODULE> <y or
+ n for metadata>`
+
+## Serving Text Predictions with Flask 
+After training a model and saving the model artifact in the `models` directory,
+it is possible to start a Flask server with the `app.py` script. This script
+initializes a basic Flask App that allows a user to input a sample post
+title and post body. The app will return a likelihood of the post being
+flagged as off-topic.
+
+To start the Flask server, please use the following command from the top
+level folder in the repository:
+`python okcupid_stackoverflow/app.py`
+
+Equivalently, the Flask server has been dockerized with the
+ `Dockerfile_flask_app` file. To create the docker container to run the Flask 
+ app that serves predictions:
+`docker build -f Dockerfile_flask_app -t interview_v1_app .`
+and run with `docker run-it -p 5000:5000 interview_v1_app`
+ 
 
 ## Airflow Orchestration
 
 Airflow is an open source framework to programmatically author and schedule
 complex work flows. By chaining individual tasks together, Airflow allows
-  users to orchestrate work flows configured as code. Users can view the
-   progress of a workflow through Airflow's UI. If a task fails, Airflow also
-    provides automated alerting capabilities for the user to resolve and re
-    -run the series of tasks.
+users to orchestrate work flows configured as code. Users can view the
+progress of a workflow through Airflow's UI. If a task fails, Airflow also
+provides automated alerting capabilities for the user to resolve and re-run 
+the series of tasks.
 
-To run the pipeline in a more automated fashion, an Airflow server has been
- set up at `INSERT IP ADDRESS HERE`. To trigger a particular run of the
-  pipeline, please use the entry point found at `bin/airflow_trigger.sh`
+To run the pipeline in a more automated fashion, an Airflow server can be set 
+up. After setting up an Airflow server, trigger a particular run of the
+pipeline, with the entry point found at `bin/airflow_trigger.sh`
   
 For example, to trigger a manual run of the tf_idf pipeline: `bash bin
 /airflow_trigger.sh -d tf_idf_pipeline -r test_123_must_be_unique -p "--use_metadata"`
 
 This will run the pre-processing task first, and upon completion run the
- model_fitting and model_evaluation tasks. If any of the tasks fail, the
-  Airflow server will send an email to the email address listed at the top of
-   the DAG definition file (`dags/tf_idf_pipeline.py`)
+model_fitting and model_evaluation tasks. If any of the tasks fail, the
+Airflow server will send an email to the email address listed at the top of
+the DAG definition file (`dags/tf_idf_pipeline.py`)
 
-## Serving Text Predictions with Flask 
-- describe Flask for automated serving

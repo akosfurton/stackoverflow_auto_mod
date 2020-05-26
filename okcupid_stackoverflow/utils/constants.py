@@ -4,8 +4,10 @@ NOT_METADATA_COLS = [
     "label",
     "light_cleaned_title",
     "light_cleaned_body",
+    "light_cleaned_text",
     "cleaned_title",
     "cleaned_body",
+    "cleaned_text",
 ]
 
 AIRFLOW_SERVER_IP = "x.y.z"
