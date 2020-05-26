@@ -30,9 +30,7 @@ default_args = {
 }
 
 # Will run every sunday at Midnight
-dag = DAG(
-    "tf_idf_pipeline", schedule_interval="0 0 * * Sun", default_args=default_args
-)
+dag = DAG("tf_idf_pipeline", schedule_interval="0 0 * * Sun", default_args=default_args)
 
 # Define DAG tasks
 task_pre_process = BashOperator(

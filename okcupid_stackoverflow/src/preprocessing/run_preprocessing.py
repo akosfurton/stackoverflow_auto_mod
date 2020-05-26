@@ -194,12 +194,8 @@ def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False, nlp=N
         )
 
     else:
-        df["light_cleaned_title"] = (
-            df["title"].apply(normalize_text)
-        )
-        df["light_cleaned_body"] = (
-            df["body"].apply(normalize_text)
-        )
+        df["light_cleaned_title"] = df["title"].apply(normalize_text)
+        df["light_cleaned_body"] = df["body"].apply(normalize_text)
 
     df["light_cleaned_text"] = (
         df["light_cleaned_title"] + " " + df["light_cleaned_body"]
@@ -231,13 +227,11 @@ def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False, nlp=N
 
     else:
         # Don't use swifter
-        df["cleaned_title"] = (
-            df["light_cleaned_title"]
-            .apply(normalize_text, deep_clean=True, nlp=nlp)
+        df["cleaned_title"] = df["light_cleaned_title"].apply(
+            normalize_text, deep_clean=True, nlp=nlp
         )
-        df["cleaned_body"] = (
-            df["light_cleaned_body"]
-            .apply(normalize_text, deep_clean=True, nlp=nlp)
+        df["cleaned_body"] = df["light_cleaned_body"].apply(
+            normalize_text, deep_clean=True, nlp=nlp
         )
 
     df["cleaned_text"] = df["cleaned_title"] + " " + df["cleaned_body"]

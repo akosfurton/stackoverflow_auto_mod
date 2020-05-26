@@ -231,17 +231,33 @@ def run_fit_bert(base_folder, run_id, save_external=True, use_metadata=False):
 
     if not use_metadata:  # Train WITHOUT metadata
         train_dataloader = convert_df_to_tensor(train_df, TensorDataset)
-        trained_model = train(model, optimizer=optimizer, train_dataloader=train_dataloader)
+        trained_model = train(
+            model, optimizer=optimizer, train_dataloader=train_dataloader
+        )
 
         score_dataloader = convert_df_to_tensor(val_df, TensorIndexDataset)
         output_ids, output = score(trained_model, score_dataloader)
 
     else:  # Train WITH metadata
-        train_dataloader = convert_df_to_tensor(train_df, TensorDataset, metadata_cols=metadata_cols)
-        trained_model = train(model, optimizer=optimizer, train_dataloader=train_dataloader, metadata=metadata_cols)
+        train_dataloader = convert_df_to_tensor(
+            train_df, TensorDataset, metadata_cols=metadata_cols
+        )
+        trained_model = train(
+            model,
+            optimizer=optimizer,
+            train_dataloader=train_dataloader,
+            metadata=metadata_cols,
+        )
 
-        score_dataloader = convert_df_to_tensor(val_df, TensorIndexDataset, metadata_cols=metadata_cols)
-        output_ids, output = score(trained_model, score_dataloader, metadata=metadata_cols)
+        score_dataloader = convert_df_to_tensor(
+            val_df, TensorIndexDataset, metadata_cols=metadata_cols
+        )
+        output_ids, output = score(
+            trained_model, score_dataloader, metadata=metadata_cols
+        )
 
     if save_external:
-        save(trained_model.state_dict(), f"{base_folder}/models/bert/{run_id}_bert_transfer")
+        save(
+            trained_model.state_dict(),
+            f"{base_folder}/models/bert/{run_id}_bert_transfer",
+        )

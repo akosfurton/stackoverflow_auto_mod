@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
 from datetime import datetime
+
+from setuptools import find_packages, setup
 
 with open("requirements.txt") as f:
     pkg_list = f.read().splitlines()
