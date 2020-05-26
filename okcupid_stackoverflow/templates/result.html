@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+	<header>
+		<div class="container">
+		<div id="brandname">
+			Off-Topic Post Detection for StackOverflow Posts
+		</div>
+
+	</div>
+	</header>
+	<p style="color:blue;font-size:20;text-align: center;"><b>Results for Post</b></p>
+	<div class="results">
+
+	{% if prediction >= 0.5%}
+	<h2 style="color:blue;">Likely {% (1 - round(prediction, 2)) * 100 %}% Acceptable</h2>
+	{% elif prediction < 0.5%}
+	<h2 style="color:red;">Likely {% round(prediction, 2) * 100 %}% Off Topic</h2>
+	{% endif %}
+
+	</div>
+
+</body>
+</html>

@@ -54,7 +54,14 @@ def fit_idf(word_count_vector):
     return tfidf_transformer
 
 
-def fit_tf_idf_vector(df, use_metadata, metadata_cols=None):
+def fit_tf_idf_vector(
+    df,
+    use_metadata,
+    metadata_cols=None,
+    save_external=False,
+    base_folder=None,
+    run_id=None,
+):
 
     train_x, train_y, val_x, val_y = _create_train_validation_set(
         df, use_metadata=use_metadata, metadata_cols=metadata_cols
@@ -67,6 +74,11 @@ def fit_tf_idf_vector(df, use_metadata, metadata_cols=None):
     vectorizer.fit(train_x["cleaned_body"])
     x_train = vectorizer.transform(train_x["cleaned_body"])
     x_val = vectorizer.transform(val_x["cleaned_body"])
+
+    if save_external:
+        joblib.dump(
+            vectorizer, f"{base_folder}/models/tf_idf/{run_id}_tf_idf_vectorizer.pkl"
+        )
 
     if use_metadata:
         x_train = pd.concat([x_train, train_x[metadata_cols]], axis=1)
@@ -134,7 +146,12 @@ def run_fit_tf_idf(base_folder, run_id, save_external=True, use_metadata=False):
     metadata_cols = [x for x in df.columns if x not in NOT_METADATA_COLS]
 
     x_train, train_y, x_val, val_y = fit_tf_idf_vector(
-        df, use_metadata=use_metadata, metadata_cols=metadata_cols
+        df,
+        use_metadata=use_metadata,
+        metadata_cols=metadata_cols,
+        save_external=save_external,
+        base_folder=base_folder,
+        run_id=run_id,
     )
     clf = fit_logistic_reg_on_tf_idf(
         x_train,

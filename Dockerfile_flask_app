@@ -28,8 +28,4 @@ ADD . /home
 # Install package
 RUN pip install -e /home
 
-# Install Airflow specific dependencies
-RUN apt-get -y install postgresql postgresql-contrib libpq-dev
-
-# Create admin account
-RUN
+ENTRYPOINT ["python okcupid_stackoverflow/app.py"]
