@@ -35,7 +35,7 @@ def predict():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+
 
     root_dir = get_git_root(os.getcwd())
     path = f"{root_dir}/models/tf_idf"
@@ -55,3 +55,4 @@ if __name__ == "__main__":
     with open(latest_vectorizer_path, "rb") as saved_vectorizer:
         vectorizer = load(saved_vectorizer)
 
+    app.run(debug=True)
