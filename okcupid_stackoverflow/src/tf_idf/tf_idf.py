@@ -1,4 +1,5 @@
 import joblib
+from scipy.sparse import hstack
 from sklearn.feature_extraction.text import (
     CountVectorizer,
     TfidfTransformer,
@@ -19,7 +20,7 @@ def _create_train_validation_set(df, use_metadata=False, metadata_cols=None):
     # Stratify is most useful with infrequent labels which may disappear from either train or test
     train_df, val_df = train_test_split(df, test_size=0.2, random_state=42)
 
-    x_cols = ["cleaned_body"]
+    x_cols = ["cleaned_text"]
     if use_metadata:
         x_cols += metadata_cols
 
@@ -71,9 +72,9 @@ def fit_tf_idf_vector(
         analyzer="word", ngram_range=(1, 4), max_features=10000,
     )
 
-    vectorizer.fit(train_x["cleaned_body"])
-    x_train = vectorizer.transform(train_x["cleaned_body"])
-    x_val = vectorizer.transform(val_x["cleaned_body"])
+    vectorizer.fit(train_x["cleaned_text"])
+    x_train = vectorizer.transform(train_x["cleaned_text"])
+    x_val = vectorizer.transform(val_x["cleaned_text"])
 
     if save_external:
         joblib.dump(
@@ -81,8 +82,8 @@ def fit_tf_idf_vector(
         )
 
     if use_metadata:
-        x_train = pd.concat([x_train, train_x[metadata_cols]], axis=1)
-        x_val = pd.concat([x_val, val_x[metadata_cols]], axis=1)
+        x_train = hstack((x_train, np.array(train_x[metadata_cols])))
+        x_val = hstack((x_val, np.array(val_x[metadata_cols])))
 
     return x_train, train_y, x_val, val_y
 

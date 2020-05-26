@@ -1,8 +1,12 @@
-import os
 import glob
+import os
+
+import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request
 from joblib import load
+from scipy.sparse import hstack
+
 from okcupid_stackoverflow.src.preprocessing.run_preprocessing import run_preprocessing
 from okcupid_stackoverflow.utils.constants import NOT_METADATA_COLS
 from okcupid_stackoverflow.utils.git_utils import get_git_root
@@ -41,7 +45,7 @@ def predict():
     x_pred = vectorizer.transform(data["cleaned_body"])
 
     metadata_cols = [x for x in data.columns if x not in NOT_METADATA_COLS]
-    x_pred = pd.concat([x_pred, data[metadata_cols]], axis=1)
+    x_pred = hstack((x_pred, np.array(data[metadata_cols])))
     my_prediction = clf.predict_proba(x_pred)[:, 1]
 
     return render_template("result.html", prediction=my_prediction)
