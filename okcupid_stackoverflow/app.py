@@ -36,7 +36,6 @@ def predict():
 
 if __name__ == "__main__":
 
-
     root_dir = get_git_root(os.getcwd())
     path = f"{root_dir}/models/tf_idf"
     files = os.listdir(path)
