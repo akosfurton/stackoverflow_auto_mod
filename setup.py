@@ -8,9 +8,9 @@ with open("requirements.txt") as f:
 current_datetime_str = datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
 
 setup(
-    name="okcupid_stackoverflow",
+    name="micdrop",
     version="0.1",
-    description="Repository for OK Cupid Take Home Interview",
+    description="Repository for Apple Take Home Interview",
     author="Akos Furton",
     author_email="akosfurton@gmail.com",
     packages=find_packages(),

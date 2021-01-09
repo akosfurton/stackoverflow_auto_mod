@@ -3,11 +3,10 @@
  
  ## Setup.py and requirements.txt
  A requirements.txt file lists external packages and their versions required
-  to run the classification pipeline. These packages are automatically
+  to run the subscription funnel pipeline. These packages are automatically
    installed as part of the setup.py file.
    
- - To install the package using pip: `pip install -r requirements.txt` 
- and then `pip install -e .`
+ - To install the package using pip: `pip install -e .`
  - The package can also be turned into a .whl file using `python setup.py
  bdist_wheel`
  
@@ -29,29 +28,28 @@ and run with `docker run-it -p 5000:5000 interview_v1_app`
  
  ## CLI Interface
 To run the pipeline, a CLI interface has been created in the
-  okcupid_stackoverflow package in the `run.py` script.
+  `micdrop` package in the `run.py` script.
   
-The CLI interface takes 3 parameters. The parameters are the run_name (used
+The CLI interface takes 2 parameters. The parameters are:
+*  run_name (used
 for distinguishing multiple model runs and providing a unique ID to save
-particular models), the module (preprocessing or model fitting), and
-use_metadata (which toggles the inclusion of metadata about the post in the
- model fitting step)
+particular models)
+* the module (preprocessing or model fitting)
  
 To run the code from the CLI interface, please use the following syntax from
 the top level folder in the repository:
-`python okcupid_stackoverflow/run.py <INSERT RUN NAME> <INSERT MODULE> <y or
- n for metadata>`
+`python micdrop/run.py <INSERT RUN NAME> <INSERT MODULE>`
 
-## Serving Text Predictions with Flask 
+## Serving Predictions with Flask 
 After training a model and saving the model artifact in the `models` directory,
 it is possible to start a Flask server with the `app.py` script. This script
-initializes a basic Flask App that allows a user to input a sample post
-title and post body. The app will return a likelihood of the post being
-flagged as off-topic.
+initializes a basic Flask App that allows a user to input a sample user 
+click (and it's associated metadata). The app will return a likelihood of the 
+user converting into a subscriber.
 
 To start the Flask server, please use the following command from the top
 level folder in the repository:
-`python okcupid_stackoverflow/app.py`
+`python micdrop/app.py`
 
 Equivalently, the Flask server has been dockerized with the
  `Dockerfile_flask_app` file. To create the docker container to run the Flask 
@@ -76,9 +74,9 @@ particular run of the pipeline with the entry point found at `bin
 /airflow_trigger.sh`
   
 For example, to trigger a manual run of the tf_idf pipeline: `bash bin
-/airflow_trigger.sh -d tf_idf_pipeline -r test_123_must_be_unique -p "y"`
+/airflow_trigger.sh -d subscription_funnel -r test_123_must_be_unique -p "y"`
 
 This will run the pre-processing task first, and upon completion run the
 model_fitting and model_evaluation tasks. If any of the tasks fail, the
 Airflow server will send an email to the email address listed at the top of
-the DAG definition file (`dags/tf_idf_pipeline.py`)
+the DAG definition file (`dags/subscription_funnel_pipeline.py`)

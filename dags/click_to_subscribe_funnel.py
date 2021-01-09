@@ -3,8 +3,8 @@ from datetime import datetime
 from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
 
-from okcupid_stackoverflow.utils.constants import RUN_PIPELINE_ENTRY_POINT
-from okcupid_stackoverflow.utils.send_email import custom_task_failure_alert
+from micdrop.utils.constants import RUN_PIPELINE_ENTRY_POINT
+from micdrop.utils.send_email import custom_task_failure_alert
 
 email_list = ["akos.furton@gmail.com"]
 

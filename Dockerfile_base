@@ -7,11 +7,10 @@ RUN pip install --upgrade pip
 COPY requirements.txt ./
 RUN pip install wheel setuptools
 RUN pip install -r requirements.txt
-RUN python -m nltk.downloader stopwords
 
 # Set up jupyter notebooks
 RUN pip install jupyter
-RUN python -m ipykernel install --name okcupid_stackoverflow
+RUN python -m ipykernel install --name micdrop_subscription_funnel
 
 # Expose Airflow Port
 EXPOSE 8080

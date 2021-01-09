@@ -1,15 +1,14 @@
 import os
 
-import en_core_web_sm
 import numpy as np
 import pandas as pd
 from flask import Flask, render_template, request
 from joblib import load
 from scipy.sparse import hstack
 
-from okcupid_stackoverflow.src.preprocessing.run_preprocessing import run_preprocessing
-from okcupid_stackoverflow.utils.constants import NOT_METADATA_COLS
-from okcupid_stackoverflow.utils.git_utils import get_git_root
+from micdrop.src.preprocessing.run_preprocessing import run_preprocessing
+from micdrop.utils.constants import NOT_METADATA_COLS
+from micdrop.utils.git_utils import get_git_root
 
 app = Flask(__name__)
 
@@ -21,11 +20,12 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    # TODO: Change this to a JSON of a row in the input dataframe
     post = {
         "title": request.form["post_title"],
         "body": request.form["post_body"],
     }
-    data = run_preprocessing("", df=pd.DataFrame([post]), save_external=False, nlp=nlp)
+    data = run_preprocessing("", df=pd.DataFrame([post]), save_external=False)
     x_pred = vectorizer.transform(data["cleaned_body"])
 
     metadata_cols = [x for x in data.columns if x not in NOT_METADATA_COLS]
@@ -51,13 +51,5 @@ if __name__ == "__main__":
     )
     with open(latest_model_path, "rb") as saved_classifier:
         clf = load(saved_classifier)
-
-    latest_vectorizer_path = max(
-        [x for x in paths if "_vectorizer" in x], key=os.path.getctime,
-    )
-    with open(latest_vectorizer_path, "rb") as saved_vectorizer:
-        vectorizer = load(saved_vectorizer)
-
-    nlp = en_core_web_sm.load()
 
     app.run(debug=True)

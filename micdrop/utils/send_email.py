@@ -4,7 +4,7 @@
 # smtp_mail_from = from email address (airflow@okcupid.com)
 
 from airflow.utils.email import send_email_smtp
-from okcupid_stackoverflow.utils.constants import AIRFLOW_SERVER_IP
+from micdrop.utils.constants import AIRFLOW_SERVER_IP
 
 
 def custom_task_failure_alert(email_list, dag_id, task_id, log_url):
