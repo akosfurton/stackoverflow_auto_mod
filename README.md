@@ -43,7 +43,7 @@ the top level folder in the repository:
 ## Serving Predictions with Flask 
 After training a model and saving the model artifact in the `models` directory,
 it is possible to start a Flask server with the `app.py` script. This script
-initializes a basic Flask App that allows a user to input a sample user 
+initializes a basic Flask App that allows a user to upload a sample user 
 click (and it's associated metadata). The app will return a likelihood of the 
 user converting into a subscriber.
 
@@ -73,7 +73,7 @@ with the entry point found at `bin/airflow_deploy.sh`. Trigger a
 particular run of the pipeline with the entry point found at `bin
 /airflow_trigger.sh`
   
-For example, to trigger a manual run of the tf_idf pipeline: `bash bin
+For example, to trigger a manual run of the subscription_funnel pipeline: `bash bin
 /airflow_trigger.sh -d subscription_funnel -r test_123_must_be_unique -p "y"`
 
 This will run the pre-processing task first, and upon completion run the

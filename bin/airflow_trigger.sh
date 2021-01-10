@@ -1,4 +1,4 @@
-# Example bash bin/airflow_trigger.sh -d tf_idf_pipeline -r test_123_must_be_unique -p "--use_metadata"
+# Example bash bin/airflow_trigger.sh -d subscription_funnel -r test_123_must_be_unique -p "--use_metadata"
 
 # Wants 3 parameters; these can be given in any order
 # -d for dag_name

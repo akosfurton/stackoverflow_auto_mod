@@ -1,4 +1,4 @@
-# Example bash bin/airflow_deploy.sh tf_idf_pipeline
+# Example bash bin/airflow_deploy.sh subscription_funnel
 
 # Wants 1 parameter dag_name
 

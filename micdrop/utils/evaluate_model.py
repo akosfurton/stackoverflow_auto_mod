@@ -81,6 +81,8 @@ def plot_model_roc_curve(true_labels, predicted_prob_labels):
     )
     roc_auc = auc(false_positive_rate, true_positive_rate)
 
+    print(f"The AUC Value is {round(roc_auc, 2)}")
+
     plt.figure(figsize=(10, 10))
     plt.title("Receiver Operating Characteristic")
     plt.plot(

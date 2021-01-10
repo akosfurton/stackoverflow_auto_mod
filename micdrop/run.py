@@ -3,12 +3,12 @@ import os
 import click
 
 from micdrop.src.preprocessing.run_preprocessing import run_preprocessing
-from micdrop.src.model.train_evaluate_model import run_fit_evaluate_pipeline
+from micdrop.src.model.train_evaluate_model import run_fit_evaluate_model
 from micdrop.utils.git_utils import get_git_root
 
 
 def pre_run_checks(module):
-    allowed_modules = ["pre_processing", "fit_model"]
+    allowed_modules = ["preprocessing", "fit_model"]
 
     assert (
         module in allowed_modules
@@ -27,11 +27,11 @@ def run(run_name, module):
 
     git_root_loc = pre_run_checks(module)
 
-    if module == "pre_processing":
+    if module == "preprocessing":
         run_preprocessing(git_root_loc, save_external=True)
 
     elif module == "fit_model":
-        run_fit_evaluate_pipeline(git_root_loc, run_id=run_name, save_external=True)
+        run_fit_evaluate_model(git_root_loc, run_id=run_name, save_external=True)
 
     else:
         raise NotImplementedError(f"Module {module} is invalid")

@@ -30,21 +30,21 @@ default_args = {
 }
 
 # Will run every sunday at Midnight
-dag = DAG("tf_idf_pipeline", schedule_interval="0 0 * * Sun", default_args=default_args)
+dag = DAG("subscription_funnel", schedule_interval="0 0 * * Sun", default_args=default_args)
 
 # Define DAG tasks
 task_pre_process = BashOperator(
     task_id="run_preprocessing",
     bash_command=RUN_PIPELINE_ENTRY_POINT,
-    params={"module": "pre_processing"},
+    params={"module": "preprocessing"},
     dag=dag,
 )
 
-task_fit_tf_idf = BashOperator(
-    task_id="run_tf_idf",
+task_fit_evaluate_model = BashOperator(
+    task_id="run_train_evaluate_model",
     bash_command=RUN_PIPELINE_ENTRY_POINT,
-    params={"module": "fit_tfidf"},
+    params={"module": "fit_model"},
     dag=dag,
 )
 
-task_pre_process >> task_fit_tf_idf
+task_pre_process >> task_fit_evaluate_model

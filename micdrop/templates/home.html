@@ -10,7 +10,7 @@
 	<header>
 		<div class="container">
 		<div id="brandname">
-			Off-Topic Post Detection for StackOverflow Posts
+			Subscription Likelihood Predictor for MicDrop
 		</div>
 
 	</div>
@@ -18,16 +18,13 @@
 
 	<div class="ml-container">
 
-		<form action="{{ url_for('predict')}}" method="POST">
-		<p>Enter Your Post Title Here</p>
-		<textarea name="post_title" rows="1" cols="80"></textarea>
-		<br/>
+		<form action="{{ url_for('predict')}}" method="POST" enctype="multipart/form-data">
+			<p> Upload your 'Possible Conversions' CSV file and then download the result</p>
 
-		<p>Enter Your Message Here</p>
-		<textarea name="post_body" rows="16" cols="80"></textarea>
-		<br/>
-
-		<input type="submit" class="btn-info" value="View Predicted Likelihood">
+		<input type="file" name="file">
+			<br>
+			<br>
+		<input type="submit" class="btn-info" value="Generate Predictions">
 
 	</form>
 

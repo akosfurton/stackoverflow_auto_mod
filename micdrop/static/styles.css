@@ -1,6 +1,6 @@
 body{
 	font:15px/1.5 Arial, Helvetica,sans-serif;
-	padding: 0px;
+	padding: 0;
 	background-color:#f4f3f3;
 }
 
@@ -11,9 +11,9 @@ body{
 }
 
 header{
-	background:#03A9F4;#35434a;
+	background:#03A9F4;
 	border-bottom:#448AFF 3px solid;
-	height:120px;
+	height:50px;
 	width:100%;
 	padding-top:30px;
 
@@ -24,13 +24,13 @@ header{
 			background-color: blue;
 			height:30px;
 			width:100%;
-			margin:0px;
+			margin:0;
 		}
 #brandname{
 	float:left;
 	font-size:30px;
 	color: #fff;
-	margin: 10px;
+	margin: 4px;
 }
 
 header h2{
@@ -39,13 +39,11 @@ header h2{
 
 }
 
-.btn-info {background-color: #2196F3;
-	height:25px;
-	width:150px;} /* Blue */
+.btn-info {height:25px;width:150px;} /* Blue */
 .btn-info:hover {background: #0b7dda;}
 
 
-.resultss{
+.results{
 	border-radius: 15px 50px;
     background: #345fe4;
     padding: 20px;
