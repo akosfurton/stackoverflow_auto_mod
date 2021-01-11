@@ -46,6 +46,15 @@ def clean_up_cities(df, city_map):
     return df
 
 
+def convert_to_categorical(df):
+    df["urban_flag"] = np.where(df["urban_flag"] == 1, "urban", "non_urban")
+    df["credit_card_on_file"] = np.where(df["credit_card_on_file"] == 1, "yes", "no")
+    df["student"] = np.where(df["student"] == 1, "student", "non_student")
+    df["is_holiday"] = np.where(df["is_holiday"] == 1, "holiday", "not_holiday")
+
+    return df
+
+
 def calc_city_rank(df):
     n_in_city = (
         df.groupby(["customer_city", "customer_state"])
@@ -59,9 +68,9 @@ def calc_city_rank(df):
     n_in_city["cum_pct"] = n_in_city["cum_sum"] / n_in_city["total"]
 
     df = df.merge(
-        n_in_city[["customer_city", "city_rank_by_size", "cum_pct"]],
+        n_in_city[["customer_city", "customer_state", "city_rank_by_size", "cum_pct"]],
         how="left",
-        on="customer_city",
+        on=["customer_city", "customer_state"],
     )
     df["city_adj"] = np.where(df["cum_pct"] < 0.8, df["customer_city"], "other")
 
@@ -77,6 +86,8 @@ def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False):
     if len(df) == 0:
         df = load_raw_data(f"{base_folder}/data/raw/micdrop_subsciptions_data_v1.csv")
 
+    start_rows = len(df)
+
     # Intelligently fill NULL values
     df = fill_null_values(df)
 
@@ -85,9 +96,13 @@ def run_preprocessing(base_folder, df=pd.DataFrame(), save_external=False):
     df = calc_date_features(df, date_col="click_date")
     df = calc_holidays(df, date_col="click_date")
     df = calc_city_rank(df)
+    df = convert_to_categorical(df)
 
     if Y_VAR in df.columns:
         df = convert_y_var_to_binary(df, Y_VAR)
+
+    end_rows = len(df)
+    assert start_rows == end_rows, f"Added or removed rows during pre-processing"
 
     if save_external:
         out_path = f"{base_folder}/data/processed/cleaned.parquet"

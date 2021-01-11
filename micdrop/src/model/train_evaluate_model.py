@@ -27,7 +27,7 @@ def _create_train_validation_set(df):
 def fit_rf_model(x_train, y_train, save_external=False, base_folder=None, run_id=None):
 
     # Use balanced weights to counter the imbalanced data set
-    clf = RandomForestClassifier(n_estimators=200, class_weight="balanced")
+    clf = RandomForestClassifier(n_estimators=200)
     clf.fit(x_train, y_train.values.ravel())
 
     if save_external:
@@ -69,3 +69,5 @@ def run_fit_evaluate_model(base_folder, run_id, save_external=True):
     )
 
     evaluate_model(clf, val_x, val_y)
+
+    return clf, x_train, y_train

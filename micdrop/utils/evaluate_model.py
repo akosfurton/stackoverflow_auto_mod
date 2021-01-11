@@ -1,17 +1,35 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.stats import chi2_contingency
 from sklearn.metrics import (
-    roc_curve,
-    auc,
     accuracy_score,
+    auc,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    log_loss,
     precision_score,
     recall_score,
-    f1_score,
-    confusion_matrix,
-    classification_report,
-    log_loss,
+    roc_curve,
 )
+
+
+def calc_chi_2_test(df, col_nm):
+
+    c, p, dof, expected = chi2_contingency(pd.crosstab(df[col_nm], df["subscriber"]))
+    print(f"The p-value is {round(p, 4)}")
+
+    if p > 0.05:
+        print(
+            f"The result is not significant at the 95% confidence level. "
+            f"The variable {col_nm} does not influence subscriber rates"
+        )
+    else:
+        print(
+            f"The result is significant at the 95% confidence level. "
+            f"The variable {col_nm} influences subscriber rates"
+        )
 
 
 def _get_metrics(true_labels, predicted_labels, prob_labels):

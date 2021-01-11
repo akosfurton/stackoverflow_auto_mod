@@ -1,7 +1,7 @@
 # Make sure that the airflow.cfg file in ~/airflow/airflow.cfg has the [SMTP]
 # settings set
 # smtp_host = SMTP server IP address
-# smtp_mail_from = from email address (airflow@okcupid.com)
+# smtp_mail_from = from email address (airflow@micdrop.com)
 
 from airflow.utils.email import send_email_smtp
 from micdrop.utils.constants import AIRFLOW_SERVER_IP

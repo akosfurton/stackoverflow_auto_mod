@@ -6,8 +6,10 @@ joblib
 matplotlib
 numpy
 pandas
+pdpbox
 pyarrow
 scikit-learn
+scipy
 setuptools
 tqdm
 werkzeug

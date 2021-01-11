@@ -21,8 +21,12 @@ CATEGORICAL_COLS = [
     "fav_genre",
     "day_of_week",
     "city_adj",
+    "urban_flag",
+    "credit_card_on_file",
+    "student",
+    "is_holiday",
 ]
-NUMERIC_COLS = ["urban_flag", "credit_card_on_file", "student", "is_holiday"]
+NUMERIC_COLS = []
 EXPECTED_COLUMNS = [
     "click_date",
     "platform",
