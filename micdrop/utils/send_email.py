@@ -4,6 +4,7 @@
 # smtp_mail_from = from email address (airflow@micdrop.com)
 
 from airflow.utils.email import send_email_smtp
+
 from micdrop.utils.constants import AIRFLOW_SERVER_IP
 
 

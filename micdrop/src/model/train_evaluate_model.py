@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 
-from micdrop.utils.constants import NUMERIC_COLS, CATEGORICAL_COLS, Y_VAR
+from micdrop.utils.constants import CATEGORICAL_COLS, NUMERIC_COLS, Y_VAR
 from micdrop.utils.evaluate_model import run_evaluate_model
 
 
@@ -50,11 +50,17 @@ def evaluate_model(clf, x_val, y_val):
 def run_fit_evaluate_model(base_folder, run_id, save_external=True):
     df = pd.read_parquet(f"{base_folder}/data/processed/cleaned.parquet")
 
-    data_dummy = pd.get_dummies(df[[Y_VAR] + CATEGORICAL_COLS + NUMERIC_COLS], dummy_na=True)
+    data_dummy = pd.get_dummies(
+        df[[Y_VAR] + CATEGORICAL_COLS + NUMERIC_COLS], dummy_na=True
+    )
 
     if save_external:
-        categorical_cols_dict = {x: list(df[x].unique()) for x in df[CATEGORICAL_COLS].columns}
-        save_path = f"{base_folder}/models/random_forest/{run_id}_categorical_cols_dict.json"
+        categorical_cols_dict = {
+            x: list(df[x].unique()) for x in df[CATEGORICAL_COLS].columns
+        }
+        save_path = (
+            f"{base_folder}/models/random_forest/{run_id}_categorical_cols_dict.json"
+        )
         with open(save_path, "w") as fp:
             json.dump(categorical_cols_dict, fp)
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from airflow import DAG
-from airflow.operators.bash_operator import BashOperator
+from airflow.operators.bash import BashOperator
 
 from micdrop.utils.constants import RUN_PIPELINE_ENTRY_POINT
 from micdrop.utils.send_email import custom_task_failure_alert
@@ -30,7 +30,9 @@ default_args = {
 }
 
 # Will run every sunday at Midnight
-dag = DAG("subscription_funnel", schedule_interval="0 0 * * Sun", default_args=default_args)
+dag = DAG(
+    "subscription_funnel", schedule_interval="0 0 * * Sun", default_args=default_args
+)
 
 # Define DAG tasks
 task_pre_process = BashOperator(
