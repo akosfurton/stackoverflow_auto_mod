@@ -18,9 +18,6 @@ EXPOSE 8080
 # Expose Jupyter Port
 EXPOSE 8888
 
-# Download raw training data
-RUN curl https://s3.amazonaws.com/techblog-static/interview_dataset.csv --create-dirs -o /home/data/raw/interview_dataset.csv
-
 # Copy repo into image
 ADD . /home
 

@@ -49,3 +49,12 @@ def plot_partial_dependence(clf, df, y_var, col_nm):
     ax.axhline(y_var.mean(), c="blue", linestyle="--")
     ax.set_xlabel(col_nm)
     ax.set_ylabel("Average Prediction")
+
+    return pd.Series(pdp_iso.pdp, index=pdp_iso.display_columns)
+
+
+def plot_feature_importance(clf, df):
+    feat_importances = pd.Series(clf.feature_importances_, index=df.columns)
+    feat_importances.sort_values()[-20:].plot(kind="barh")
+
+    return feat_importances
