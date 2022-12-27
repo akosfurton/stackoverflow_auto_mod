@@ -10,7 +10,7 @@ pdpbox==0.2.0
 pyarrow==0.17.0
 scikit-learn==0.23.1
 scipy==1.4.1
-setuptools==41.2.0
+setuptools==65.5.1
 tqdm==4.56.0
 werkzeug==1.0.1
 workalendar==14.2.0
